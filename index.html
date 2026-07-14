@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Бюджет">
+<meta name="theme-color" content="#1a1a18">
+<title>Мой бюджет</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#f5f3ee;--card:#fff;--border:#e5e2d8;
+  --text:#1a1a18;--t2:#6b6860;--t3:#b0ada4;
+  --green:#1a7a55;--gbg:#eaf5f0;--gb:#a8dcc5;
+  --red:#c0392b;--rbg:#fdf0ee;--rb:#f5b8b0;
+  --amber:#8B5E1A;--abg:#fdf3e3;--ab:#f0c27a;
+  --blue:#2d6bc4;--bbg:#eef4fd;--bb:#c5daff;
+  --purple:#6B4FBB;--pbg:#f3f0fd;--pb:#c9bff0;
+  --r:12px;--rs:8px;
+}
+html,body{height:100%;font-family:-apple-system,system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;overflow:hidden}
+/* ── DESKTOP LAYOUT ── */
+.app{display:grid;grid-template-columns:300px 1fr;height:100vh}
+/* ── LEFT ── */
+.lp{background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.lp-top{padding:12px;border-bottom:1px solid var(--border);flex-shrink:0}
+.lp-top h2{font-size:15px;font-weight:700;margin-bottom:8px}
+.row{display:flex;gap:6px}
+.sinp{flex:1;padding:7px 10px;font-size:12px;border:0.5px solid var(--border);border-radius:var(--rs);background:#faf9f5;font-family:inherit;color:var(--text)}
+.sinp:focus{outline:none;border-color:var(--blue)}
+.btn-add{padding:7px 13px;font-size:12px;font-weight:600;background:var(--text);color:#fff;border:none;border-radius:var(--rs);cursor:pointer;font-family:inherit;white-space:nowrap}
+.filters{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
+.chip{padding:4px 10px;font-size:11px;border:0.5px solid var(--border);border-radius:12px;background:var(--bg);color:var(--t2);cursor:pointer;font-family:inherit}
+.chip.on{background:var(--text);color:#fff;border-color:var(--text)}
+.lp-list{flex:1;overflow-y:auto;padding:8px}
+/* Left card */
+.lc{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rs);padding:9px 11px;margin-bottom:6px;cursor:grab;position:relative;transition:border-color .15s}
+.lc:hover{border-color:var(--blue);background:#f0f5fd}
+.lc.dragging{opacity:.3}
+.lc.inplan{border-color:var(--pb);background:var(--pbg)}
+.lc.isdone{opacity:.4;cursor:default}
+.lc-row{display:flex;justify-content:space-between;align-items:flex-start;gap:6px}
+.lc-name{font-size:12px;font-weight:600;flex:1;min-width:0;line-height:1.3}
+.lc-price{font-size:12px;font-weight:700;white-space:nowrap;flex-shrink:0}
+.lc-price.np{color:var(--amber);font-weight:400;font-size:11px}
+.lc-note{font-size:10px;color:var(--t3);margin-top:2px;line-height:1.3}
+.tags{display:flex;gap:3px;flex-wrap:wrap;margin-top:5px}
+.tag{font-size:9px;padding:2px 6px;border-radius:6px;font-weight:600}
+.bp{position:absolute;top:5px;right:6px;font-size:9px;padding:1px 5px;border-radius:4px;color:#fff;font-weight:600}
+.bp-plan{background:var(--purple)}
+.bp-done{background:var(--green)}
+/* Month badge */
+.mhdr{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.4px;padding:8px 4px 4px;display:flex;justify-content:space-between}
+/* ── RIGHT ── */
+.rp{display:flex;flex-direction:column;overflow:hidden}
+/* Month tabs */
+.mtabs{background:var(--card);border-bottom:1px solid var(--border);padding:10px 14px 0;flex-shrink:0}
+.mtabs-row{display:flex;gap:4px;overflow-x:auto;padding-bottom:10px}
+.mtabs-row::-webkit-scrollbar{height:0}
+/* Income */
+.income{background:var(--card);border-bottom:1px solid var(--border);padding:10px 14px;flex-shrink:0}
+.inc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px}
+.inc-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rs);padding:8px 10px}
+.inc-lbl{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:3px}
+.inc-row{display:flex;align-items:center;gap:4px}
+.inc-inp{flex:1;font-size:14px;font-weight:700;border:none;background:transparent;font-family:inherit;color:var(--text);min-width:0}
+.inc-inp:focus{outline:none;border-bottom:1.5px solid var(--blue)}
+.inc-extra-total{font-size:14px;font-weight:700}
+.inc-extra-names{font-size:10px;color:var(--t3);margin-top:2px;line-height:1.3}
+.btn-link{font-size:10px;color:var(--blue);cursor:pointer;padding:2px 6px;border:0.5px solid var(--bb);border-radius:5px;background:var(--bbg);font-family:inherit;white-space:nowrap}
+.hier{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.hc{border-radius:var(--rs);padding:8px 10px;border:0.5px solid var(--border)}
+.hc-lbl{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px;line-height:1.3}
+.hc-val{font-size:14px;font-weight:700}
+/* Checklist */
+.cl-wrap{background:var(--card);border-bottom:1px solid var(--border);padding:8px 14px;flex-shrink:0}
+.cl-hdr{font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between}
+.cl-items{display:flex;gap:5px;flex-wrap:wrap}
+.cl-item{display:flex;align-items:center;gap:4px;padding:5px 9px;border-radius:14px;border:0.5px solid var(--border);background:var(--bg);cursor:pointer;font-size:11px;font-weight:500;transition:all .12s;user-select:none}
+.cl-item.paid{background:var(--gbg);border-color:var(--gb);color:var(--green)}
+.cl-chk{width:13px;height:13px;border-radius:50%;border:1.5px solid var(--t3);display:flex;align-items:center;justify-content:center;font-size:8px;color:transparent;flex-shrink:0}
+.cl-item.paid .cl-chk{background:var(--green);border-color:var(--green);color:#fff}
+.cl-amt{font-size:10px;opacity:.65;margin-left:1px}
+.cl-edit{font-size:10px;padding:1px 4px;border:0.5px solid var(--border);border-radius:4px;background:var(--card);cursor:pointer;font-family:inherit;color:var(--t3);margin-left:2px}
+/* Right subtabs */
+.rtabs{display:flex;gap:4px;padding:8px 14px 0;flex-shrink:0}
+/* Kanban topbar */
+.kbtop{background:var(--card);border-bottom:1px solid var(--border);padding:9px 14px;flex-shrink:0;display:grid;grid-template-columns:auto auto 1fr auto;gap:8px;align-items:center}
+.kbs{font-size:16px;color:var(--t3)}
+.kbc{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rs);padding:8px 11px}
+.kbc-lbl{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px}
+.kbc-val{font-size:14px;font-weight:700}
+.kbc.ok{background:var(--gbg);border-color:var(--gb)}.kbc.ok .kbc-val{color:var(--green)}
+.kbc.warn{background:var(--abg);border-color:var(--ab)}.kbc.warn .kbc-val{color:var(--amber)}
+.kbc.over{background:var(--rbg);border-color:var(--rb)}.kbc.over .kbc-val{color:var(--red)}
+/* Available bar */
+.kbc-avail{background:var(--bbg);border:0.5px solid var(--bb);border-radius:var(--rs);padding:8px 11px;flex:1;min-width:160px}
+.kbc-avail .kbc-lbl{color:var(--blue)}
+.av-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
+.av-total{font-size:14px;font-weight:700;color:var(--blue)}
+.av-spent{font-size:11px;color:var(--t2)}
+.av-bar{height:5px;background:rgba(0,0,0,.08);border-radius:3px;overflow:hidden;margin-bottom:3px}
+.av-fill{height:100%;border-radius:3px;transition:width .4s}
+.av-sub{display:flex;justify-content:space-between;font-size:10px;color:var(--t3)}
+/* Kanban */
+.kboard{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.kanban{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:8px 14px 14px;flex:1;overflow:hidden;min-height:0}
+.kcol{background:var(--card);border:0.5px solid var(--border);border-radius:var(--r);display:flex;flex-direction:column;overflow:hidden;min-height:0}
+.kcol-head{padding:10px 12px;border-bottom:0.5px solid var(--border);flex-shrink:0}
+.kcol-head.lim{background:#e4effe;border-bottom-color:var(--bb)}
+.kcol-head.plan{background:var(--pbg);border-bottom-color:var(--pb)}
+.kcol-head.done{background:var(--gbg);border-bottom-color:var(--gb)}
+.kcol-title{font-size:12px;font-weight:700}
+.kcol-sum{font-size:11px;font-weight:600;margin-top:2px}
+.kcol-hint{font-size:10px;color:var(--t3);margin-top:2px}
+.kcol-items{flex:1;overflow-y:auto;padding:8px}
+.kcol-items::-webkit-scrollbar{width:3px}
+.dz{border:2px dashed var(--border);border-radius:var(--rs);padding:16px;text-align:center;color:var(--t3);font-size:11px;margin-bottom:6px;transition:all .15s}
+.dz.over{border-color:var(--purple);background:var(--pbg);color:var(--purple)}
+/* Kanban card */
+.kc{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rs);padding:10px 11px;margin-bottom:7px;cursor:pointer;transition:border-color .12s}
+.kc:hover{border-color:var(--blue)}
+.kc.lim-card{cursor:default}
+.kc-row{display:flex;justify-content:space-between;align-items:flex-start;gap:6px;margin-bottom:4px}
+.kc-name{font-size:12px;font-weight:600;flex:1;min-width:0;line-height:1.3}
+.kc-price{font-size:13px;font-weight:700;white-space:nowrap;flex-shrink:0}
+.kc-price.np{color:var(--amber);font-size:11px;font-weight:400}
+.kc-note{font-size:10px;color:var(--t3);margin-bottom:3px;line-height:1.3}
+.kc-date{font-size:10px;color:var(--blue);margin-bottom:3px}
+.kc-btns{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.kb{padding:4px 10px;font-size:10px;border:0.5px solid var(--border);border-radius:6px;background:var(--card);cursor:pointer;font-family:inherit;color:var(--t2)}
+.kb:hover{background:var(--bg)}
+.kb.ok{color:var(--green);border-color:var(--gb)}.kb.ok:hover{background:var(--gbg)}
+.kb.rm{color:var(--red);border-color:var(--rb)}.kb.rm:hover{background:var(--rbg)}
+/* Limit card specifics */
+.lim-inp{font-size:13px;font-weight:700;border:none;background:transparent;font-family:inherit;color:var(--text);width:70px;text-align:right}
+.lim-inp:focus{outline:none;border-bottom:1.5px solid var(--blue)}
+.lim-bar{height:4px;background:rgba(0,0,0,.08);border-radius:2px;overflow:hidden;margin:5px 0 3px}
+.lim-fill{height:100%;border-radius:2px;transition:width .3s}
+.lim-remain{font-size:10px;font-weight:600}
+/* Calendar */
+.cal-wrap{flex:1;overflow-y:auto;padding:10px 14px}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border-radius:var(--rs);overflow:hidden}
+.cal-dow{background:#faf9f5;text-align:center;font-size:10px;font-weight:600;color:var(--t3);padding:5px 2px}
+.cal-cell{background:var(--card);min-height:52px;padding:4px;cursor:pointer}
+.cal-cell:hover{background:var(--bbg)}
+.cal-cell.empty{background:var(--bg);cursor:default}.cal-cell.empty:hover{background:var(--bg)}
+.cal-cell.today{background:var(--bbg)}
+.cal-dn{font-size:10px;font-weight:600;color:var(--t2);margin-bottom:2px}
+.cal-cell.today .cal-dn{color:var(--blue)}
+.cal-ev{font-size:9px;padding:1px 3px;border-radius:3px;margin-bottom:1px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+/* MODALS */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;display:flex;align-items:center;justify-content:center;padding:16px}
+.mbox{background:var(--card);border-radius:var(--r);padding:18px;max-width:400px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.mbox h3{font-size:15px;font-weight:700;margin-bottom:14px}
+.fg{display:grid;gap:8px;margin-bottom:8px}
+.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr 1fr}
+label.L{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;display:block;margin-bottom:3px}
+input[type=text],input[type=number],input[type=date],select{width:100%;padding:8px 10px;font-size:13px;border:0.5px solid var(--border);border-radius:var(--rs);background:#fff;color:var(--text);font-family:inherit}
+input:focus,select:focus{outline:none;border-color:var(--blue)}
+.btn-row{display:flex;gap:7px;margin-top:12px}
+.btn{padding:9px 14px;font-size:13px;border:0.5px solid var(--border);border-radius:var(--rs);background:var(--card);color:var(--text);cursor:pointer;font-family:inherit}
+.btn:hover{background:var(--bg)}
+.btn.pr{background:var(--text);color:#fff;border-color:var(--text);flex:1}.btn.pr:hover{background:#333}
+.btn.dl{color:var(--red);border-color:var(--rb)}.btn.dl:hover{background:var(--rbg)}
+.btn.sm{padding:5px 11px;font-size:11px}
+.ex-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:0.5px solid var(--border);font-size:12px}
+.ex-row:last-child{border-bottom:none}
+/* scrollbar */
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* ══════════════════════════════════════
+   MOBILE — everything below 700px
+   One column. Kanban: tab switcher, full-width columns.
+══════════════════════════════════════ */
+@media(max-width:700px){
+  html,body{overflow:auto;height:auto}
+  .app{grid-template-columns:1fr;height:auto;overflow:visible}
+
+  /* Left panel - compact */
+  .lp{height:auto;max-height:44vh;min-height:200px;overflow:hidden}
+  .lp-top{padding:10px}
+  .lp-top h2{font-size:13px;margin-bottom:7px}
+  .lp-list{overflow-y:auto;flex:1}
+
+  /* Right panel */
+  .rp{overflow:visible;height:auto}
+
+  /* Month tabs */
+  .mtabs{padding:8px 10px 0}
+  .mtabs-row{gap:4px}
+  .mtabs-row .chip{font-size:10px;padding:4px 10px}
+
+  /* Income - 3 cols then 2x2 */
+  .income{padding:8px 10px}
+  .inc-grid{grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:6px}
+  .inc-card{padding:6px 8px}
+  .inc-lbl{font-size:8px}
+  .inc-inp{font-size:13px}
+  .inc-extra-total{font-size:13px}
+  .btn-link{font-size:9px;padding:2px 5px}
+  .hier{grid-template-columns:1fr 1fr;gap:5px}
+  .hc{padding:6px 8px}
+  .hc-lbl{font-size:8px;line-height:1.3}
+  .hc-val{font-size:13px}
+
+  /* Checklist */
+  .cl-wrap{padding:7px 10px}
+  .cl-hdr{font-size:10px;margin-bottom:6px}
+  .cl-items{gap:4px}
+  .cl-item{font-size:10px;padding:4px 7px}
+  .cl-amt{font-size:9px}
+  .cl-edit{font-size:9px}
+
+  /* Subtabs */
+  .rtabs{padding:7px 10px 0;gap:4px}
+  .rtabs .chip{font-size:11px;padding:5px 12px}
+
+  /* Kanban mobile tab switcher - SHOW on mobile */
+  #mob-tabs{display:flex !important}
+  .mob-kb-tab{flex:1;padding:9px 4px;font-size:11px;font-weight:600;border:none;border-bottom:2px solid transparent;background:transparent;color:#b0ada4;text-align:center;cursor:pointer;font-family:inherit}
+  .mob-kb-tab .tab-sum{display:block;font-size:10px;font-weight:400;color:#b0ada4;margin-top:1px}
+  .mob-kb-tab.on{color:#1a1a18;border-bottom-color:#1a1a18}
+  .mob-kb-tab.on .tab-sum{color:#6b6860}
+
+  /* Kanban topbar - 2x2 grid */
+  .kbtop{
+    grid-template-columns:1fr 1fr;
+    gap:6px;
+    padding:8px 10px;
+  }
+  .kbs{display:none}
+  .kbc{padding:7px 9px}
+  .kbc-lbl{font-size:8px}
+  .kbc-val{font-size:13px}
+  .kbc-avail{grid-column:1/-1;padding:9px 11px;min-width:0}
+  .kbc-avail .kbc-lbl{font-size:8px}
+  .av-total{font-size:14px}
+  .av-spent{font-size:10px}
+  .av-sub{font-size:9px}
+  /* ok/over also full width */
+  .kbtop > div:last-child{grid-column:1/-1}
+
+  /* Kanban board */
+  .kboard{overflow:visible;height:auto}
+  .kanban{display:block;padding:0;height:auto;overflow:visible}
+
+  /* Each column hidden by default, shown via mob-show */
+  .kcol{
+    display:none;
+    width:100%;
+    height:auto;
+    max-height:none;
+    border-radius:0;
+    border-left:none;
+    border-right:none;
+    border-top:none;
+  }
+  .kcol.mob-show{display:flex;flex-direction:column}
+  .kcol-items{overflow-y:visible;max-height:none;padding:10px}
+  .kcol-head{padding:10px 14px}
+
+  /* Cards in kanban - full width, no overflow */
+  .kc{padding:10px 12px;margin-bottom:8px}
+  .kc-row{flex-wrap:nowrap}
+  .kc-name{font-size:13px;word-break:break-word;white-space:normal;flex:1;min-width:0;padding-right:6px}
+  .kc-price{font-size:14px;white-space:nowrap;flex-shrink:0}
+  .kc-note{font-size:11px}
+  .kc-date{font-size:11px}
+  .tags .tag{font-size:10px;padding:2px 7px}
+  .kc-btns{flex-wrap:wrap;gap:5px}
+  .kb{font-size:11px;padding:5px 11px}
+  .lim-inp{width:75px;font-size:14px}
+
+  /* Left list cards */
+  .lc{padding:9px 10px;margin-bottom:6px}
+  .lc-row{flex-wrap:nowrap}
+  .lc-name{font-size:12px;flex:1;min-width:0;word-break:break-word}
+  .lc-price{font-size:12px;font-weight:700;white-space:nowrap;flex-shrink:0;padding-left:5px}
+  .lc-note{font-size:10px}
+  .tags .tag{font-size:9px}
+
+  /* Modals */
+  .mbox{padding:14px;max-width:calc(100vw - 20px)}
+  .g3{grid-template-columns:1fr 1fr}
+  .btn{font-size:13px}
+
+  /* Calendar */
+  .cal-wrap{padding:8px 10px}
+  .cal-cell{min-height:46px}
+  .cal-ev{font-size:9px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ══ LEFT ══ -->
+<div class="lp">
+  <div class="lp-top">
+    <h2>📝 Мои идеи и покупки</h2>
+    <div class="row">
+      <input class="sinp" type="text" id="lsearch" placeholder="Поиск..." oninput="renderLeft()">
+      <button class="btn-add" onclick="openItem(null)">+ Добавить</button>
+    </div>
+    <div class="filters" id="lfilters">
+      <button class="chip on" onclick="setLF('all',this)">Все</button>
+      <button class="chip" onclick="setLF('free',this)">Свободные</button>
+      <button class="chip" onclick="setLF('someday',this)">Без срока</button>
+      <button class="chip" onclick="setLF('done',this)">✅ Куплено</button>
+      <button class="chip" onclick="setLF('lib',this)">📚 Библиотека</button>
+    </div>
+  </div>
+  <div class="lp-list" id="left-list"></div>
+</div>
+
+<!-- ══ RIGHT ══ -->
+<div class="rp">
+  <!-- Month tabs -->
+  <div class="mtabs">
+    <div class="mtabs-row" id="month-tabs"></div>
+  </div>
+  <!-- Income -->
+  <div class="income">
+    <div class="inc-grid">
+      <div class="inc-card">
+        <div class="inc-lbl">Зарплата</div>
+        <div class="inc-row"><input class="inc-inp" type="number" id="i-sal" value="30000"><span style="font-size:11px;color:var(--t3)">₽</span></div>
+      </div>
+      <div class="inc-card">
+        <div class="inc-lbl">Пособие</div>
+        <div class="inc-row"><input class="inc-inp" type="number" id="i-ben" value="21000"><span style="font-size:11px;color:var(--t3)">₽</span></div>
+      </div>
+      <div class="inc-card">
+        <div class="inc-lbl">Дополнительно</div>
+        <div class="inc-row">
+          <span class="inc-extra-total" id="i-ext-tot">0 ₽</span>
+          <button class="btn-link" onclick="openExtra()">+ Добавить</button>
+        </div>
+        <div class="inc-extra-names" id="i-ext-names"></div>
+      </div>
+    </div>
+    <div class="hier">
+      <div class="hc" style="background:var(--gbg);border-color:var(--gb)">
+        <div class="hc-lbl">Итого доход</div>
+        <div class="hc-val" id="h-inc" style="color:var(--green)">—</div>
+      </div>
+      <div class="hc" style="background:var(--rbg);border-color:var(--rb)">
+        <div class="hc-lbl">Важные платежи</div>
+        <div class="hc-val" id="h-cl" style="color:var(--red)">—</div>
+      </div>
+      <div class="hc" style="background:var(--abg);border-color:var(--ab)">
+        <div class="hc-lbl">Мой баланс (после важных)</div>
+        <div class="hc-val" id="h-bal" style="color:var(--amber)">—</div>
+      </div>
+      <div class="hc" style="background:var(--bbg);border-color:var(--bb)">
+        <div class="hc-lbl">Остаток (после трат)</div>
+        <div class="hc-val" id="h-free" style="color:var(--blue)">—</div>
+      </div>
+    </div>
+  </div>
+  <!-- Checklist -->
+  <div class="cl-wrap">
+    <div class="cl-hdr">✅ Важные платежи <button class="btn sm" onclick="openCl(null)" style="font-size:10px">+ Добавить</button></div>
+    <div class="cl-items" id="cl-items"></div>
+  </div>
+  <!-- Subtabs -->
+  <div class="rtabs">
+    <button class="chip on" onclick="setRT('kanban',this)">📋 Канбан</button>
+    <button class="chip" onclick="setRT('calendar',this)">📅 Календарь</button>
+  </div>
+  <!-- Mobile kanban tab switcher (shown only on mobile) -->
+  <div class="mob-kb-tabs" id="mob-tabs" style="display:none">
+    <button class="mob-kb-tab on" onclick="setMobCol(0,this)">📦 Лимиты<span class="tab-sum" id="mt-lim">—</span></button>
+    <button class="mob-kb-tab" onclick="setMobCol(1,this)">🗂️ Запланировано<span class="tab-sum" id="mt-plan">—</span></button>
+    <button class="mob-kb-tab" onclick="setMobCol(2,this)">✅ Куплено<span class="tab-sum" id="mt-done">—</span></button>
+  </div>
+  <!-- Kanban -->
+  <div class="kboard" id="rt-kanban">
+    <!-- Topbar -->
+    <div class="kbtop" id="kbtop"></div>
+    <!-- Board -->
+    <div class="kanban">
+      <div class="kcol mob-show" id="col-lim">
+        <div class="kcol-head lim">
+          <div class="kcol-title">📦 Лимиты</div>
+          <div class="kcol-sum" id="lim-sum" style="color:var(--blue)">0 ₽</div>
+          <div class="kcol-hint">Постоянные расходы месяца</div>
+        </div>
+        <div class="kcol-items" id="kb-lim"></div>
+      </div>
+      <div class="kcol" id="col-plan">
+        <div class="kcol-head plan">
+          <div class="kcol-title">🗂️ Запланировано</div>
+          <div class="kcol-sum" id="plan-sum" style="color:var(--purple)">0 ₽</div>
+          <div class="kcol-hint">Перетащи из левого списка</div>
+        </div>
+        <div class="kcol-items" id="kb-plan"
+          ondragover="event.preventDefault();this.classList.add('over')"
+          ondragleave="this.classList.remove('over')"
+          ondrop="onDrop(event)">
+          <div class="dz" id="plan-dz"
+            ondragover="event.preventDefault();this.classList.add('over')"
+            ondragleave="this.classList.remove('over')"
+            ondrop="onDrop(event)">← Перетащи сюда</div>
+        </div>
+      </div>
+      <div class="kcol" id="col-done">
+        <div class="kcol-head done">
+          <div class="kcol-title">✅ Куплено</div>
+          <div class="kcol-sum" id="done-sum" style="color:var(--green)">0 ₽</div>
+          <div class="kcol-hint">Отмеченные покупки</div>
+        </div>
+        <div class="kcol-items" id="kb-done"></div>
+      </div>
+    </div>
+  </div>
+  <!-- Calendar -->
+  <div class="cal-wrap" id="rt-calendar" style="display:none">
+    <div class="cal-nav">
+      <button class="btn sm" onclick="calNav(-1)">‹</button>
+      <strong id="cal-title" style="font-size:14px"></strong>
+      <button class="btn sm" onclick="calNav(1)">›</button>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+  </div>
+</div>
+
+<!-- ══ MODALS ══ -->
+<!-- Item modal -->
+<div class="ov" id="m-item" style="display:none" onclick="if(event.target===this)closeItem()">
+  <div class="mbox">
+    <h3 id="m-item-ttl">Добавить</h3>
+    <div class="fg"><label class="L">Название</label><input type="text" id="mi-name" placeholder="Маникюр, линзы..."></div>
+    <div class="fg g3">
+      <div><label class="L">Цена ₽</label><input type="number" id="mi-price" min="0" step="50" placeholder="0"></div>
+      <div><label class="L">Категория</label>
+        <select id="mi-cat">
+          <option value="beauty">💄 Красота</option>
+          <option value="health">💊 Здоровье</option>
+          <option value="clothes">👗 Одежда</option>
+          <option value="child">👶 Ребёнок</option>
+          <option value="home">🏠 Дом/техника</option>
+          <option value="gifts">🎁 Подарки</option>
+          <option value="food">🛒 Продукты</option>
+          <option value="transport">🚗 Транспорт</option>
+          <option value="other">📌 Прочее</option>
+        </select>
+      </div>
+      <div><label class="L">Важность</label>
+        <select id="mi-prio">
+          <option value="high">🔴 Нужно</option>
+          <option value="mid">🟡 Желательно</option>
+          <option value="low">⚪ Когда-нибудь</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg g2">
+      <div><label class="L">Месяц</label>
+        <select id="mi-when">
+          <option value="2026-07">Июль 2026</option>
+          <option value="2026-08">Август 2026</option>
+          <option value="2026-09">Сентябрь 2026</option>
+          <option value="2026-10">Октябрь 2026</option>
+          <option value="2026-11">Ноябрь 2026</option>
+          <option value="2026-12">Декабрь 2026</option>
+          <option value="2027-01">Январь 2027</option>
+          <option value="2027-02">Февраль 2027</option>
+          <option value="2027-03">Март 2027</option>
+          <option value="2027-04">Апрель 2027</option>
+          <option value="someday">Без срока</option>
+        </select>
+      </div>
+      <div><label class="L">Конкретная дата</label><input type="date" id="mi-date"></div>
+    </div>
+    <div class="fg"><label class="L">Заметка</label><input type="text" id="mi-note" placeholder="Детали..."></div>
+    <div class="btn-row">
+      <button class="btn pr" onclick="saveItem()">Сохранить</button>
+      <button class="btn dl" id="mi-del" onclick="deleteItem()" style="display:none">Удалить</button>
+      <button class="btn dl" id="mi-reuse" onclick="reuseItem()" style="display:none;color:var(--purple);border-color:var(--pb)">↩ Повторить</button>
+      <button class="btn" onclick="closeItem()">Отмена</button>
+    </div>
+  </div>
+</div>
+<!-- Extra income modal -->
+<div class="ov" id="m-extra" style="display:none" onclick="if(event.target===this)closeExtra()">
+  <div class="mbox">
+    <h3>💰 Дополнительные доходы</h3>
+    <div id="extra-list" style="margin-bottom:12px"></div>
+    <div style="font-size:12px;font-weight:600;color:var(--t2);margin-bottom:8px;border-top:0.5px solid var(--border);padding-top:10px">Добавить:</div>
+    <div class="fg g2">
+      <div><label class="L">Источник</label><input type="text" id="ex-src" placeholder="Папа, работа..."></div>
+      <div><label class="L">Сумма ₽</label><input type="number" id="ex-amt" placeholder="0" min="0"></div>
+    </div>
+    <div class="fg"><label class="L">Заметка</label><input type="text" id="ex-note" placeholder="Необязательно"></div>
+    <div class="btn-row">
+      <button class="btn pr" onclick="addExtra()">Добавить</button>
+      <button class="btn" onclick="closeExtra()">Закрыть</button>
+    </div>
+  </div>
+</div>
+<!-- Checklist modal -->
+<div class="ov" id="m-cl" style="display:none" onclick="if(event.target===this)closeCl()">
+  <div class="mbox">
+    <h3 id="m-cl-ttl">Платёж</h3>
+    <div class="fg"><label class="L">Название</label><input type="text" id="cl-name" placeholder="Кредит №1..."></div>
+    <div class="fg g2">
+      <div><label class="L">Сумма ₽</label><input type="number" id="cl-amt" min="0" placeholder="0"></div>
+      <div><label class="L">Примечание</label><input type="text" id="cl-note" placeholder="до 27-28 числа"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn pr" onclick="saveCl()">Сохранить</button>
+      <button class="btn dl" id="cl-del" onclick="deleteCl()" style="display:none">Удалить</button>
+      <button class="btn" onclick="closeCl()">Отмена</button>
+    </div>
+  </div>
+</div>
+<!-- Limit modal -->
+<div class="ov" id="m-lim" style="display:none" onclick="if(event.target===this)closeLim()">
+  <div class="mbox">
+    <h3 id="m-lim-ttl">Лимит</h3>
+    <div class="fg"><label class="L">Название</label><input type="text" id="lm-name" placeholder="Продукты..."></div>
+    <div class="fg g2">
+      <div><label class="L">Лимит ₽</label><input type="number" id="lm-lim" min="0" placeholder="0"></div>
+      <div><label class="L">Смайлик</label><input type="text" id="lm-emoji" placeholder="🛒" maxlength="2"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn pr" onclick="saveLim()">Сохранить</button>
+      <button class="btn dl" id="lm-del" onclick="deleteLim()" style="display:none">Удалить</button>
+      <button class="btn" onclick="closeLim()">Отмена</button>
+    </div>
+  </div>
+</div>
+<!-- Spend modal -->
+<div class="ov" id="m-spend" style="display:none" onclick="if(event.target===this)closeSpend()">
+  <div class="mbox">
+    <h3 id="sp-ttl">Потратила</h3>
+    <div style="font-size:12px;color:var(--t2);margin-bottom:10px" id="sp-sub"></div>
+    <div class="fg g2">
+      <div><label class="L">Сумма ₽</label><input type="number" id="sp-amt" min="0" placeholder="0"></div>
+      <div><label class="L">Заметка</label><input type="text" id="sp-note" placeholder="Пятёрочка..."></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn pr" onclick="saveSpend()">Добавить в куплено</button>
+      <button class="btn" onclick="closeSpend()">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONSTANTS ──────────────────────────────────────────────────────────────
+const MN=["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
+const MNG=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+const DOW=["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
+const ALL_MONTHS=["2026-07","2026-08","2026-09","2026-10","2026-11","2026-12","2027-01","2027-02","2027-03","2027-04"];
+const CAT={beauty:"💄 Красота",health:"💊 Здоровье",clothes:"👗 Одежда",child:"👶 Ребёнок",home:"🏠 Дом",gifts:"🎁 Подарки",food:"🛒 Продукты",transport:"🚗 Транспорт",other:"📌 Прочее"};
+const CAT_C={beauty:"#8B5E1A",health:"#2d6bc4",clothes:"#6B4FBB",child:"#1a7a55",home:"#c0392b",gifts:"#e67e22",food:"#2d8a6b",transport:"#444",other:"#6b6860"};
+const EMO={beauty:"💄",health:"💊",clothes:"👗",child:"👶",home:"🏠",gifts:"🎁",food:"🛒",transport:"🚗",other:"📌"};
+const PRIO={high:"🔴 Нужно",mid:"🟡 Желательно",low:"⚪ Когда-нибудь"};
+const PC={high:"#fdf0ee|#c0392b",mid:"#fdf3e3|#8B5E1A",low:"#f0f0ec|#999"};
+
+// ── DEFAULT DATA ───────────────────────────────────────────────────────────
+const DEFAULT = {
+  curMonth:"2026-07",
+  nextId:300,
+  salByMonth:{"2026-07":31000},
+  benByMonth:{},
+  extraByMonth:{"2026-07":[{id:"ex1",src:"Папа",amount:10000,note:""}]},
+  clByMonth:{"2026-07":[
+    {id:"cl1",name:"Кредит №1",amount:5890,note:"до 3 числа",paid:true},
+    {id:"cl2",name:"Кредит №2",amount:6800,note:"27-28 числа",paid:false},
+    {id:"cl3",name:"Подушка безопасности",amount:3000,note:"накопительный счёт",paid:true},
+    {id:"cl4",name:"Мобильная связь",amount:1200,note:"",paid:true},
+    {id:"cl5",name:"Интернет и ТВ",amount:1300,note:"",paid:false},
+    {id:"cl6",name:"iCloud",amount:1200,note:"",paid:false},
+  ]},
+  limByMonth:{"2026-07":[
+    {id:"lim1",name:"Продукты",emoji:"🛒",limit:8000,spent:0},
+    {id:"lim2",name:"Бензин",emoji:"⛽",limit:2500,spent:2000},
+    {id:"lim3",name:"Бытовая химия и товары для дома",emoji:"🧴",limit:2000,spent:0},
+    {id:"lim4",name:"Корм и наполнитель для кота",emoji:"🐱",limit:1600,spent:0},
+  ]},
+  items:[
+    // КУПЛЕНО — итого 11 870 ₽
+    {id:1,name:"Маникюр",price:2800,cat:"beauty",prio:"high",when:"2026-07",date:"2026-07-09",note:"9 июля",status:"plan",done:true},
+    {id:2,name:"Брови (коррекция)",price:2000,cat:"beauty",prio:"high",when:"2026-07",date:"2026-07-12",note:"12 июля",status:"plan",done:true},
+    {id:3,name:"Анализы",price:1500,cat:"health",prio:"high",when:"2026-07",date:"2026-07-07",note:"После 5 июля",status:"plan",done:true},
+    {id:6,name:"Линзы",price:2220,cat:"health",prio:"high",when:"2026-07",date:"",note:"",status:"plan",done:true},
+    {id:7,name:"Тушь",price:600,cat:"beauty",prio:"high",when:"2026-07",date:"",note:"Закончилась",status:"plan",done:true},
+    {id:200,name:"Подстричь Лёву",price:1000,cat:"child",prio:"mid",when:"2026-07",date:"",note:"",status:"plan",done:true},
+    {id:201,name:"Наколенники",price:350,cat:"other",prio:"mid",when:"2026-07",date:"",note:"",status:"plan",done:true},
+    {id:202,name:"Случайный перевод",price:1400,cat:"other",prio:"low",when:"2026-07",date:"",note:"Ошибочный перевод",status:"plan",done:true},
+    // ЗАПЛАНИРОВАНО
+    {id:4,name:"Аптека",price:1200,cat:"health",prio:"high",when:"2026-07",date:"",note:"Ежемесячно",status:"plan",done:false},
+    {id:5,name:"Сандали Лёве — доплата (2 пары в пути)",price:0,cat:"child",prio:"high",when:"2026-07",date:"",note:"Предоплата уже оплачена",status:"plan",done:false},
+    // СВОБОДНЫЕ ИЮЛЬ
+    {id:9,name:"Дневной крем",price:0,cat:"beauty",prio:"mid",when:"2026-07",date:"",note:"",status:"free",done:false},
+    {id:10,name:"Столовые приборы Лёве",price:0,cat:"child",prio:"mid",when:"2026-07",date:"",note:"2 набора",status:"free",done:false},
+    {id:11,name:"Цепочка (недорогая)",price:0,cat:"beauty",prio:"mid",when:"2026-07",date:"",note:"Снова порвалась",status:"free",done:false},
+    {id:12,name:"Солярий",price:0,cat:"beauty",prio:"mid",when:"2026-07",date:"",note:"5-6 посещений",status:"free",done:false},
+    // АВГУСТ
+    {id:20,name:"Стрижка + окрашивание",price:9000,cat:"beauty",prio:"mid",when:"2026-08",date:"2026-08-10",note:"Раз в 3 мес.",status:"free",done:false},
+    {id:21,name:"Рюкзак в сад",price:0,cat:"child",prio:"high",when:"2026-08",date:"",note:"",status:"free",done:false},
+    {id:22,name:"Трусики в сад",price:0,cat:"child",prio:"high",when:"2026-08",date:"",note:"",status:"free",done:false},
+    {id:23,name:"Носочки в сад",price:0,cat:"child",prio:"high",when:"2026-08",date:"",note:"",status:"free",done:false},
+    {id:24,name:"Подарок подруге на ДР",price:0,cat:"gifts",prio:"high",when:"2026-08",date:"",note:"Август",status:"free",done:false},
+    {id:25,name:"Колонка для ноутбука",price:4000,cat:"home",prio:"low",when:"2026-08",date:"",note:"",status:"free",done:false},
+    // СЕНТЯБРЬ+
+    {id:30,name:"Витамины",price:4000,cat:"health",prio:"high",when:"2026-09",date:"2026-09-05",note:"Следующие в сентябре",status:"free",done:false},
+    {id:31,name:"🎂 Мой день рождения",price:15000,cat:"other",prio:"high",when:"2026-11",date:"2026-11-27",note:"27 ноября",status:"free",done:false},
+    {id:32,name:"🎄 Новый год",price:20000,cat:"other",prio:"high",when:"2026-12",date:"2026-12-31",note:"",status:"free",done:false},
+    {id:33,name:"🎁 ДР племянницы",price:0,cat:"gifts",prio:"mid",when:"2026-12",date:"2026-12-26",note:"",status:"free",done:false},
+    {id:34,name:"🎂 ДР сына",price:15000,cat:"other",prio:"high",when:"2027-01",date:"2027-01-20",note:"20 января",status:"free",done:false},
+    {id:35,name:"🎁 ДР племянника",price:0,cat:"gifts",prio:"mid",when:"2027-02",date:"2027-02-25",note:"",status:"free",done:false},
+    {id:36,name:"🎁 ДР мамы",price:0,cat:"gifts",prio:"mid",when:"2027-03",date:"2027-03-03",note:"",status:"free",done:false},
+    {id:37,name:"🎁 ДР сестры",price:0,cat:"gifts",prio:"mid",when:"2027-04",date:"2027-04-02",note:"",status:"free",done:false},
+    {id:38,name:"🎁 ДР отца",price:0,cat:"gifts",prio:"mid",when:"2027-04",date:"2027-04-29",note:"",status:"free",done:false},
+    // БЕЗ СРОКА
+    {id:50,name:"Сарафан или лёгкое платье",price:0,cat:"clothes",prio:"mid",when:"someday",date:"",note:"На лето",status:"free",done:false},
+    {id:51,name:"Юбка",price:0,cat:"clothes",prio:"low",when:"someday",date:"",note:"",status:"free",done:false},
+    {id:52,name:"Пиджак",price:0,cat:"clothes",prio:"low",when:"someday",date:"",note:"",status:"free",done:false},
+    {id:53,name:"Атласные брюки",price:0,cat:"clothes",prio:"low",when:"someday",date:"",note:"",status:"free",done:false},
+    {id:54,name:"Босоножки на каблуке",price:0,cat:"clothes",prio:"low",when:"someday",date:"",note:"",status:"free",done:false},
+    {id:55,name:"Фотоэпилятор",price:0,cat:"home",prio:"low",when:"someday",date:"",note:"",status:"free",done:false},
+    {id:56,name:"Машинка от катышек",price:0,cat:"home",prio:"low",when:"someday",date:"",note:"",status:"free",done:false},
+    {id:57,name:"Робот-пылесос",price:0,cat:"home",prio:"low",when:"someday",date:"",note:"Старый тупит",status:"free",done:false},
+    {id:58,name:"Миксер",price:0,cat:"home",prio:"low",when:"someday",date:"",note:"",status:"free",done:false},
+    {id:59,name:"Постельное бельё (1 комплект)",price:8000,cat:"home",prio:"low",when:"someday",date:"",note:"",status:"free",done:false},
+    {id:60,name:"🌏 Поездка в Хэйхэ",price:17000,cat:"other",prio:"mid",when:"someday",date:"",note:"Реально этим летом!",status:"free",done:false},
+    {id:61,name:"Отбеливающий крем для тела",price:0,cat:"beauty",prio:"low",when:"someday",date:"",note:"",status:"free",done:false},
+    {id:62,name:"Крем-депилятор",price:0,cat:"beauty",prio:"low",when:"someday",date:"",note:"",status:"free",done:false},
+    {id:63,name:"Духи на розлив (5 ароматов)",price:0,cat:"beauty",prio:"low",when:"someday",date:"",note:"",status:"free",done:false},
+    {id:64,name:"Наряд на праздник к подруге",price:0,cat:"clothes",prio:"low",when:"someday",date:"",note:"",status:"free",done:false},
+  ]
+};
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+let S = JSON.parse(JSON.stringify(DEFAULT)); // deep copy
+let lf="all", calYear=2026, calMonth=6;
+let editId=null, clEditId=null, limEditId=null, spendLimId=null;
+let dragId=null;
+const KEY = "budget_app_2026";
+
+// ── STORAGE ────────────────────────────────────────────────────────────────
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function load(){
+  try{
+    const raw=localStorage.getItem(KEY);
+    if(!raw) return; // use defaults
+    const p=JSON.parse(raw);
+    // Only load if has real data
+    if(p && p.items && p.items.length>0) S=p;
+  }catch(e){}
+}
+
+// ── UTILS ──────────────────────────────────────────────────────────────────
+const fmt=n=>n>0?Math.round(n).toLocaleString("ru-RU")+" ₽":"0 ₽";
+const ml=ym=>{if(ym==="someday")return"Без срока";const[y,m]=ym.split("-");return MN[+m-1]+" "+y;};
+const fds=d=>{if(!d)return"";const[,m,day]=d.split("-");return`${+day} ${MNG[+m-1]}`;};
+function tag(bg,col,t){return`<span class="tag" style="background:${bg};color:${col}">${t}</span>`;}
+function catTag(c){return tag(CAT_C[c]+"22",CAT_C[c],CAT[c]||c);}
+function prioTag(p){const[bg,col]=PC[p].split("|");return tag(bg,col,PRIO[p]);}
+function dtTag(d){return d?tag("var(--bbg)","var(--blue)",fds(d)):"";}
+function getSal(){return +(document.getElementById("i-sal").value)||0;}
+function getBen(){return +(document.getElementById("i-ben").value)||0;}
+function getExtraTotal(){return(S.extraByMonth[S.curMonth]||[]).reduce((s,e)=>s+e.amount,0);}
+function getTotalIncome(){return getSal()+getBen()+getExtraTotal();}
+function getClTotal(){return(S.clByMonth[S.curMonth]||[]).reduce((s,c)=>s+c.amount,0);}
+function getLimTotal(){return(S.limByMonth[S.curMonth]||[]).reduce((s,l)=>s+l.limit,0);}
+function getPlanTotal(){return S.items.filter(i=>i.when===S.curMonth&&i.status==="plan"&&!i.done).reduce((s,i)=>s+(i.price||0),0);}
+function getDoneTotal(){return S.items.filter(i=>i.when===S.curMonth&&i.done).reduce((s,i)=>s+(i.price||0),0);}
+function getCl(){if(!S.clByMonth[S.curMonth])S.clByMonth[S.curMonth]=JSON.parse(JSON.stringify(DEFAULT.clByMonth["2026-07"]||[])).map(x=>({...x,paid:false}));return S.clByMonth[S.curMonth];}
+function getLims(){if(!S.limByMonth[S.curMonth]){const prev=Object.keys(S.limByMonth).sort().filter(k=>k<S.curMonth).pop();S.limByMonth[S.curMonth]=prev?S.limByMonth[prev].map(x=>({...x,spent:0})):[{id:"lim1",name:"Продукты",emoji:"🛒",limit:8000,spent:0},{id:"lim2",name:"Бензин",emoji:"⛽",limit:2500,spent:0},{id:"lim3",name:"Бытовая химия",emoji:"🧴",limit:2000,spent:0},{id:"lim4",name:"Кот",emoji:"🐱",limit:1600,spent:0}];}return S.limByMonth[S.curMonth];}
+const isMob=()=>window.innerWidth<=700;
+
+// ── MONTH TABS ─────────────────────────────────────────────────────────────
+function buildTabs(){
+  document.getElementById("month-tabs").innerHTML=ALL_MONTHS.map(m=>
+    `<button class="chip${m===S.curMonth?" on":""}" onclick="setCurMonth('${m}',this)">${ml(m)}</button>`
+  ).join("");
+}
+function setCurMonth(m,btn){
+  S.salByMonth[S.curMonth]=getSal();
+  S.benByMonth[S.curMonth]=getBen();
+  S.curMonth=m;
+  document.querySelectorAll(".mtabs-row .chip").forEach(b=>b.classList.remove("on"));
+  if(btn)btn.classList.add("on");
+  document.getElementById("i-sal").value=S.salByMonth[m]||30000;
+  document.getElementById("i-ben").value=S.benByMonth[m]||21000;
+  save();render();
+}
+
+// ── INCOME ─────────────────────────────────────────────────────────────────
+function renderIncome(){
+  const ext=getExtraTotal();
+  const extList=S.extraByMonth[S.curMonth]||[];
+  document.getElementById("i-ext-tot").textContent=fmt(ext);
+  document.getElementById("i-ext-names").textContent=extList.map(e=>e.src+(e.amount?` ${fmt(e.amount)}`:""+(e.note?` (${e.note})`:""))).join(" · ")||"";
+  const total=getSal()+getBen()+ext;
+  const cl=getClTotal();
+  const bal=total-cl;
+  const done=getDoneTotal();
+  const free=bal-getLimTotal()-done;
+  document.getElementById("h-inc").textContent=fmt(total);
+  document.getElementById("h-cl").textContent="− "+fmt(cl);
+  document.getElementById("h-bal").textContent=fmt(bal);
+  const fe=document.getElementById("h-free");
+  fe.textContent=(free<0?"− ":"")+fmt(Math.abs(free));
+  fe.style.color=free<0?"var(--red)":free<3000?"var(--amber)":"var(--blue)";
+}
+
+// ── KANBAN TOPBAR ──────────────────────────────────────────────────────────
+function renderTopbar(){
+  const bal=getTotalIncome()-getClTotal();
+  const lim=getLimTotal();
+  const avail=bal-lim;
+  const spent=getDoneTotal();
+  const remaining=avail-spent;
+  const pct=avail>0?Math.min(100,spent/avail*100):0;
+  const barCol=pct>90?"var(--red)":pct>70?"var(--amber)":"var(--green)";
+  const plan=getPlanTotal();
+  const committed=spent+plan;
+  const isOver=committed>avail;
+  const overAmt=committed-avail;
+
+  document.getElementById("kbtop").innerHTML=`
+    <div class="kbc">
+      <div class="kbc-lbl">Мой баланс</div>
+      <div class="kbc-val" style="color:var(--amber)">${fmt(bal)}</div>
+    </div>
+    <div class="kbs">−</div>
+    <div class="kbc">
+      <div class="kbc-lbl">Лимиты месяца</div>
+      <div class="kbc-val" style="color:var(--blue)">${fmt(lim)}</div>
+    </div>
+    <div class="kbs">=</div>
+    <div class="kbc-avail">
+      <div class="kbc-lbl">Доступно для плана</div>
+      <div class="av-row">
+        <span class="av-total">${fmt(avail)}</span>
+        <span class="av-spent">потрачено: <strong style="color:var(--red)">${fmt(spent)}</strong></span>
+      </div>
+      <div class="av-bar"><div class="av-fill" style="width:${pct}%;background:${barCol}"></div></div>
+      <div class="av-sub">
+        <span style="color:${remaining<0?"var(--red)":remaining<3000?"var(--amber)":"var(--green)"};font-weight:600">Осталось: ${remaining<0?"− ":""}${fmt(Math.abs(remaining))}</span>
+        <span>${Math.round(pct)}% потрачено</span>
+      </div>
+    </div>
+    <div class="kbs">·</div>
+    ${isOver
+      ?`<div class="kbc over"><div class="kbc-lbl">⚠️ Превышение</div><div class="kbc-val">− ${fmt(overAmt)}</div></div>`
+      :`<div class="kbc ok"><div class="kbc-lbl">✓ В рамках бюджета</div><div class="kbc-val">${fmt(avail-committed)}</div></div>`}`;
+}
+
+// ── CHECKLIST ──────────────────────────────────────────────────────────────
+function renderCl(){
+  const cl=getCl();
+  document.getElementById("cl-items").innerHTML=cl.map(c=>`
+    <div class="cl-item${c.paid?" paid":""}" onclick="toggleCl('${c.id}')">
+      <div class="cl-chk">${c.paid?"✓":""}</div>
+      <span>${c.name}</span>
+      <span class="cl-amt">${c.amount>0?fmt(c.amount):""}</span>
+      ${c.note?`<span class="cl-amt">(${c.note})</span>`:""}
+      <button class="cl-edit" onclick="event.stopPropagation();openCl('${c.id}')">✎</button>
+    </div>`).join("");
+}
+function toggleCl(id){const c=getCl().find(x=>x.id===id);if(c)c.paid=!c.paid;save();renderCl();renderIncome();}
+function openCl(id){
+  clEditId=id;const cl=getCl();const c=id?cl.find(x=>x.id===id):null;
+  document.getElementById("m-cl-ttl").textContent=c?"Редактировать":"Новый платёж";
+  document.getElementById("cl-name").value=c?c.name:"";
+  document.getElementById("cl-amt").value=c?c.amount:"";
+  document.getElementById("cl-note").value=c?c.note||"":"";
+  document.getElementById("cl-del").style.display=c?"inline-flex":"none";
+  document.getElementById("m-cl").style.display="flex";
+  setTimeout(()=>document.getElementById("cl-name").focus(),80);
+}
+function saveCl(){
+  const name=document.getElementById("cl-name").value.trim();if(!name)return;
+  const cl=getCl();
+  if(clEditId){const c=cl.find(x=>x.id===clEditId);if(c){c.name=name;c.amount=+document.getElementById("cl-amt").value||0;c.note=document.getElementById("cl-note").value.trim();}}
+  else cl.push({id:"cl"+Date.now(),name,amount:+document.getElementById("cl-amt").value||0,note:document.getElementById("cl-note").value.trim(),paid:false});
+  closeCl();save();renderCl();renderIncome();renderTopbar();
+}
+function deleteCl(){if(!clEditId)return;const cl=getCl();const i=cl.findIndex(x=>x.id===clEditId);if(i>-1)cl.splice(i,1);closeCl();save();renderCl();renderIncome();renderTopbar();}
+function closeCl(){document.getElementById("m-cl").style.display="none";clEditId=null;}
+
+// ── KANBAN ─────────────────────────────────────────────────────────────────
+function renderKanban(){
+  const lims=getLims();
+  const limSum=lims.reduce((s,l)=>s+l.limit,0);
+  document.getElementById("lim-sum").textContent=fmt(limSum);
+  document.getElementById("kb-lim").innerHTML=
+    `<button class="chip" style="width:100%;justify-content:center;display:flex;margin-bottom:8px" onclick="openLim(null)">+ Добавить лимит</button>`+
+    lims.map(l=>{
+      const rem=l.limit-l.spent;
+      const pct=l.limit>0?Math.min(100,l.spent/l.limit*100):0;
+      const col=pct>90?"var(--red)":pct>70?"var(--amber)":"var(--green)";
+      return`<div class="kc lim-card">
+        <div class="kc-row">
+          <div class="kc-name">${l.emoji} ${l.name}</div>
+          <div style="display:flex;align-items:center;gap:3px">
+            <input class="lim-inp" type="number" value="${l.limit}" min="0" step="100"
+              onchange="updLim('${l.id}',this.value)" onclick="event.stopPropagation()">
+            <span style="font-size:11px;color:var(--t3)">₽</span>
+          </div>
+        </div>
+        <div class="lim-bar"><div class="lim-fill" style="width:${pct}%;background:${col}"></div></div>
+        <div class="lim-remain" style="color:${rem<0?"var(--red)":rem<l.limit*.2?"var(--amber)":"var(--green)"}">${rem>=0?"Осталось "+fmt(rem):"Перерасход "+fmt(Math.abs(rem))}</div>
+        <div class="kc-btns" onclick="event.stopPropagation()">
+          <button class="kb ok" onclick="openSpend('${l.id}')">+ Потратила</button>
+          <button class="kb" onclick="openLim('${l.id}')">✎ Изменить</button>
+        </div>
+      </div>`;}).join("");
+
+  const planList=S.items.filter(i=>i.when===S.curMonth&&i.status==="plan"&&!i.done)
+    .sort((a,b)=>a.date&&b.date?a.date.localeCompare(b.date):a.date?-1:b.date?1:({high:0,mid:1,low:2}[a.prio]-{high:0,mid:1,low:2}[b.prio]));
+  const planSum=planList.reduce((s,i)=>s+(i.price||0),0);
+  document.getElementById("plan-sum").textContent=fmt(planSum);
+  document.getElementById("kb-plan").innerHTML=
+    `<div class="dz" id="plan-dz" style="display:${planList.length?"none":"flex"}"
+      ondragover="event.preventDefault();this.classList.add('over')"
+      ondragleave="this.classList.remove('over')"
+      ondrop="onDrop(event)">← Перетащи сюда из списка</div>`+
+    planList.map(it=>kcardHTML(it,"plan")).join("");
+
+  const doneList=S.items.filter(i=>i.when===S.curMonth&&i.done);
+  const doneSum=doneList.reduce((s,i)=>s+(i.price||0),0);
+  document.getElementById("done-sum").textContent=fmt(doneSum);
+  document.getElementById("kb-done").innerHTML=doneList.length
+    ?doneList.map(it=>kcardHTML(it,"done")).join("")
+    :`<div style="text-align:center;padding:20px;color:var(--t3);font-size:11px">Пока ничего не куплено</div>`;
+
+  // Mobile tab sums
+  const mt1=document.getElementById("mt-lim");const mt2=document.getElementById("mt-plan");const mt3=document.getElementById("mt-done");
+  if(mt1)mt1.textContent=fmt(limSum);
+  if(mt2)mt2.textContent=fmt(planSum);
+  if(mt3)mt3.textContent=fmt(doneSum);
+
+  renderTopbar();
+}
+
+function kcardHTML(it,col){
+  return`<div class="kc" onclick="openItem(${it.id})">
+    <div class="kc-row">
+      <div class="kc-name">${EMO[it.cat]||"📌"} ${it.name}</div>
+      <div class="${it.price>0?"kc-price":"kc-price np"}">${it.price>0?fmt(it.price):"цена?"}</div>
+    </div>
+    ${it.note?`<div class="kc-note">${it.note}</div>`:""}
+    ${it.date?`<div class="kc-date">📅 ${fds(it.date)}</div>`:""}
+    <div class="tags">${catTag(it.cat)}${prioTag(it.prio)}</div>
+    <div class="kc-btns" onclick="event.stopPropagation()">
+      ${col==="plan"?`<button class="kb ok" onclick="markDone(${it.id})">✓ Куплено</button>`:""}
+      ${col==="done"?`<button class="kb" onclick="unDone(${it.id})">↩ Вернуть</button>`:""}
+      <button class="kb rm" onclick="removePlan(${it.id})">× Убрать</button>
+    </div>
+  </div>`;
+}
+
+function updLim(id,val){const l=getLims().find(x=>x.id===id);if(l)l.limit=+val||0;save();renderKanban();}
+function markDone(id){const it=S.items.find(i=>i.id===id);if(it)it.done=true;save();render();}
+function unDone(id){const it=S.items.find(i=>i.id===id);if(it)it.done=false;save();render();}
+function removePlan(id){const it=S.items.find(i=>i.id===id);if(it){it.status="free";it.done=false;}save();render();}
+
+// Limit modals
+function openLim(id){
+  limEditId=id;const lims=getLims();const l=id?lims.find(x=>x.id===id):null;
+  document.getElementById("m-lim-ttl").textContent=l?"Изменить лимит":"Новый лимит";
+  document.getElementById("lm-name").value=l?l.name:"";
+  document.getElementById("lm-lim").value=l?l.limit:"";
+  document.getElementById("lm-emoji").value=l?l.emoji:"";
+  document.getElementById("lm-del").style.display=l?"inline-flex":"none";
+  document.getElementById("m-lim").style.display="flex";
+  setTimeout(()=>document.getElementById("lm-name").focus(),80);
+}
+function saveLim(){
+  const name=document.getElementById("lm-name").value.trim();if(!name)return;
+  const lims=getLims();
+  if(limEditId){const l=lims.find(x=>x.id===limEditId);if(l){l.name=name;l.limit=+document.getElementById("lm-lim").value||0;l.emoji=document.getElementById("lm-emoji").value||"📦";}}
+  else lims.push({id:"lim"+Date.now(),name,emoji:document.getElementById("lm-emoji").value||"📦",limit:+document.getElementById("lm-lim").value||0,spent:0});
+  closeLim();save();renderKanban();renderIncome();
+}
+function deleteLim(){if(!limEditId)return;const lims=getLims();const i=lims.findIndex(x=>x.id===limEditId);if(i>-1)lims.splice(i,1);closeLim();save();renderKanban();renderIncome();}
+function closeLim(){document.getElementById("m-lim").style.display="none";limEditId=null;}
+
+// Spend modal
+function openSpend(id){
+  spendLimId=id;const l=getLims().find(x=>x.id===id);if(!l)return;
+  document.getElementById("sp-ttl").textContent=`${l.emoji} ${l.name} — трата`;
+  document.getElementById("sp-sub").textContent=`Лимит: ${fmt(l.limit)} · Потрачено: ${fmt(l.spent)} · Осталось: ${fmt(l.limit-l.spent)}`;
+  document.getElementById("sp-amt").value="";document.getElementById("sp-note").value="";
+  document.getElementById("m-spend").style.display="flex";
+  setTimeout(()=>document.getElementById("sp-amt").focus(),80);
+}
+function saveSpend(){
+  if(!spendLimId)return;const amt=+document.getElementById("sp-amt").value||0;if(!amt)return;
+  const note=document.getElementById("sp-note").value.trim();
+  const l=getLims().find(x=>x.id===spendLimId);if(l)l.spent+=amt;
+  S.items.push({id:S.nextId++,name:`${l?l.emoji:""} ${l?l.name:"Трата"}${note?" — "+note:""}`,price:amt,cat:"other",prio:"high",when:S.curMonth,date:"",note,status:"plan",done:true});
+  closeSpend();save();render();
+}
+function closeSpend(){document.getElementById("m-spend").style.display="none";spendLimId=null;}
+
+// ── DRAG & DROP ────────────────────────────────────────────────────────────
+function onDS(e,id){dragId=id;e.dataTransfer.effectAllowed="move";setTimeout(()=>{const el=document.getElementById("lc-"+id);if(el)el.classList.add("dragging");},0);}
+function onDE(){if(dragId){const el=document.getElementById("lc-"+dragId);if(el)el.classList.remove("dragging");}dragId=null;}
+function onDrop(e){
+  e.preventDefault();e.currentTarget.classList.remove("over");
+  if(!dragId)return;
+  const it=S.items.find(i=>i.id===dragId);
+  if(it){it.status="plan";it.when=S.curMonth;}
+  dragId=null;save();render();
+}
+
+// ── LEFT LIST ──────────────────────────────────────────────────────────────
+function setLF(f,btn){lf=f;document.querySelectorAll(".filters .chip").forEach(b=>b.classList.remove("on"));btn.classList.add("on");renderLeft();}
+function renderLeft(){
+  const q=(document.getElementById("lsearch").value||"").toLowerCase();
+  let list=S.items.filter(i=>{
+    if(q&&!i.name.toLowerCase().includes(q))return false;
+    if(lf==="free")return i.status==="free"&&!i.done;
+    if(lf==="someday")return i.when==="someday"&&!i.done;
+    if(lf==="done")return i.done;
+    if(lf==="lib")return i.done||i.when==="someday";
+    return true;
+  });
+  const groups={};list.forEach(i=>{if(!groups[i.when])groups[i.when]=[];groups[i.when].push(i);});
+  const order=[...new Set(list.map(i=>i.when))].sort((a,b)=>a==="someday"?1:b==="someday"?-1:a.localeCompare(b));
+  const root=document.getElementById("left-list");
+  if(!list.length){root.innerHTML=`<div style="text-align:center;padding:20px;color:var(--t3);font-size:12px">Пусто</div>`;return;}
+  root.innerHTML=order.map(k=>{
+    const grp=[...groups[k]].sort((a,b)=>({high:0,mid:1,low:2}[a.prio]-{high:0,mid:1,low:2}[b.prio]));
+    const tot=grp.reduce((s,i)=>s+(i.price||0),0);
+    return`<div class="mhdr">${ml(k)}<span>${tot>0?fmt(tot):""}</span></div>`+
+    grp.map(it=>`<div class="lc${it.done?" isdone":it.status==="plan"?" inplan":""}" id="lc-${it.id}"
+      draggable="${!it.done&&it.status==="free"}"
+      ondragstart="onDS(event,${it.id})" ondragend="onDE()"
+      onclick="openItem(${it.id})">
+      ${it.status==="plan"&&!it.done?`<div class="bp bp-plan">в плане</div>`:""}
+      ${it.done?`<div class="bp bp-done">✓</div>`:""}
+      <div class="lc-row">
+        <div class="lc-name">${EMO[it.cat]||"📌"} ${it.name}</div>
+        <div class="lc-price${!it.price?" np":""}">${it.price>0?fmt(it.price):"цена?"}</div>
+      </div>
+      ${it.note?`<div class="lc-note">${it.note}</div>`:""}
+      <div class="tags">${catTag(it.cat)}${prioTag(it.prio)}${dtTag(it.date)}</div>
+    </div>`).join("");
+  }).join("");
+}
+
+// ── ITEM MODAL ─────────────────────────────────────────────────────────────
+function openItem(id){
+  editId=id;const it=id?S.items.find(i=>i.id===id):null;
+  document.getElementById("m-item-ttl").textContent=it?"Редактировать":"Добавить";
+  document.getElementById("mi-name").value=it?it.name:"";
+  document.getElementById("mi-price").value=it&&it.price?it.price:"";
+  document.getElementById("mi-cat").value=it?it.cat:"beauty";
+  document.getElementById("mi-prio").value=it?it.prio:"mid";
+  document.getElementById("mi-when").value=it?it.when:S.curMonth;
+  document.getElementById("mi-date").value=it?it.date||"":"";
+  document.getElementById("mi-note").value=it?it.note||"":"";
+  document.getElementById("mi-del").style.display=it?"inline-flex":"none";
+  document.getElementById("mi-reuse").style.display=(it&&it.done)?"inline-flex":"none";
+  document.getElementById("m-item").style.display="flex";
+  setTimeout(()=>document.getElementById("mi-name").focus(),80);
+}
+function closeItem(){document.getElementById("m-item").style.display="none";editId=null;}
+function saveItem(){
+  const name=document.getElementById("mi-name").value.trim();if(!name)return;
+  if(editId){
+    const it=S.items.find(i=>i.id===editId);
+    if(it){it.name=name;it.price=+document.getElementById("mi-price").value||0;it.cat=document.getElementById("mi-cat").value;it.prio=document.getElementById("mi-prio").value;it.when=document.getElementById("mi-when").value;it.date=document.getElementById("mi-date").value||"";it.note=document.getElementById("mi-note").value.trim();}
+  } else {
+    S.items.unshift({id:S.nextId++,name,price:+document.getElementById("mi-price").value||0,cat:document.getElementById("mi-cat").value,prio:document.getElementById("mi-prio").value,when:document.getElementById("mi-when").value,date:document.getElementById("mi-date").value||"",note:document.getElementById("mi-note").value.trim(),status:"free",done:false});
+  }
+  closeItem();save();render();
+}
+function deleteItem(){if(!editId)return;if(!confirm("Удалить?"))return;S.items=S.items.filter(i=>i.id!==editId);closeItem();save();render();}
+function reuseItem(){
+  if(!editId)return;const orig=S.items.find(i=>i.id===editId);if(!orig)return;
+  S.items.unshift({id:S.nextId++,name:orig.name,price:orig.price,cat:orig.cat,prio:orig.prio,when:S.curMonth,date:"",note:orig.note,status:"free",done:false});
+  closeItem();save();render();
+}
+
+// ── EXTRA INCOME ────────────────────────────────────────────────────────────
+function openExtra(){
+  if(!S.extraByMonth[S.curMonth])S.extraByMonth[S.curMonth]=[];
+  renderExtraList();
+  document.getElementById("ex-src").value="";document.getElementById("ex-amt").value="";document.getElementById("ex-note").value="";
+  document.getElementById("m-extra").style.display="flex";
+}
+function renderExtraList(){
+  const ex=S.extraByMonth[S.curMonth]||[];
+  document.getElementById("extra-list").innerHTML=ex.length
+    ?ex.map((e,i)=>`<div class="ex-row"><span style="flex:1;font-weight:500">${e.src}</span><span style="font-weight:700">${fmt(e.amount)}</span>${e.note?`<span style="color:var(--t3);font-size:11px">(${e.note})</span>`:""}<button class="btn sm dl" onclick="delExtra(${i})" style="padding:3px 7px">✕</button></div>`).join("")
+    :`<div style="font-size:12px;color:var(--t3)">Нет дополнительных доходов</div>`;
+}
+function addExtra(){
+  const src=document.getElementById("ex-src").value.trim();if(!src)return;
+  if(!S.extraByMonth[S.curMonth])S.extraByMonth[S.curMonth]=[];
+  S.extraByMonth[S.curMonth].push({id:"ex"+Date.now(),src,amount:+document.getElementById("ex-amt").value||0,note:document.getElementById("ex-note").value.trim()});
+  document.getElementById("ex-src").value="";document.getElementById("ex-amt").value="";document.getElementById("ex-note").value="";
+  renderExtraList();save();renderIncome();renderTopbar();
+}
+function delExtra(i){if(S.extraByMonth[S.curMonth])S.extraByMonth[S.curMonth].splice(i,1);renderExtraList();save();renderIncome();renderTopbar();}
+function closeExtra(){document.getElementById("m-extra").style.display="none";}
+
+// ── CALENDAR ───────────────────────────────────────────────────────────────
+function renderCalendar(){
+  document.getElementById("cal-title").textContent=MN[calMonth]+" "+calYear;
+  const ym=calYear+"-"+String(calMonth+1).padStart(2,"0");
+  const firstDow=(new Date(calYear,calMonth,1).getDay()+6)%7;
+  const dim=new Date(calYear,calMonth+1,0).getDate();
+  const byDate={};S.items.filter(i=>i.date&&i.date.startsWith(ym)).forEach(i=>{if(!byDate[i.date])byDate[i.date]=[];byDate[i.date].push(i);});
+  const today=new Date();
+  let h=DOW.map(d=>`<div class="cal-dow">${d}</div>`).join("");
+  for(let i=0;i<firstDow;i++)h+=`<div class="cal-cell empty"></div>`;
+  for(let d=1;d<=dim;d++){
+    const ds=ym+"-"+String(d).padStart(2,"0");
+    const isT=today.getFullYear()===calYear&&today.getMonth()===calMonth&&today.getDate()===d;
+    const evts=byDate[ds]||[];
+    h+=`<div class="cal-cell${isT?" today":""}"><div class="cal-dn">${d}</div>${evts.slice(0,3).map(e=>`<div class="cal-ev" style="background:${CAT_C[e.cat]}22;color:${CAT_C[e.cat]}" onclick="event.stopPropagation();openItem(${e.id})">${EMO[e.cat]} ${e.name}</div>`).join("")}${evts.length>3?`<div style="font-size:9px;color:var(--t3)">+${evts.length-3}</div>`:""}</div>`;
+  }
+  document.getElementById("cal-grid").innerHTML=h;
+}
+function calNav(d){calMonth+=d;if(calMonth>11){calMonth=0;calYear++;}if(calMonth<0){calMonth=11;calYear--;}renderCalendar();}
+
+// ── MOBILE ─────────────────────────────────────────────────────────────────
+function setMobCol(idx,btn){
+  document.querySelectorAll(".kcol").forEach((c,i)=>c.classList.toggle("mob-show",i===idx));
+  document.querySelectorAll(".mob-kb-tab").forEach(b=>b.classList.remove("on"));
+  btn.classList.add("on");
+}
+function initMobile(){
+  const mob=isMob();
+  document.getElementById("mob-tabs").style.display=mob?"flex":"none";
+  if(mob){
+    document.querySelectorAll(".kcol").forEach((c,i)=>c.classList.toggle("mob-show",i===0));
+    document.querySelectorAll(".mob-kb-tab").forEach((b,i)=>b.classList.toggle("on",i===0));
+  } else {
+    document.querySelectorAll(".kcol").forEach(c=>{c.classList.remove("mob-show");c.style.display="";});
+  }
+}
+
+// ── TABS ───────────────────────────────────────────────────────────────────
+function setRT(t,btn){
+  document.getElementById("rt-kanban").style.display=t==="kanban"?"flex":"none";
+  document.getElementById("rt-calendar").style.display=t==="calendar"?"block":"none";
+  document.querySelectorAll(".rtabs .chip").forEach(b=>b.classList.remove("on"));
+  btn.classList.add("on");
+  if(t==="calendar")renderCalendar();
+}
+
+// ── INPUT SYNC ─────────────────────────────────────────────────────────────
+document.getElementById("i-sal").addEventListener("input",()=>{S.salByMonth[S.curMonth]=getSal();save();renderIncome();renderTopbar();});
+document.getElementById("i-ben").addEventListener("input",()=>{S.benByMonth[S.curMonth]=getBen();save();renderIncome();renderTopbar();});
+
+// ── KEYBOARD ───────────────────────────────────────────────────────────────
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"){closeItem();closeExtra();closeCl();closeLim();closeSpend();}
+  if(e.key==="Enter"){
+    if(document.getElementById("m-item").style.display!=="none"){e.preventDefault();saveItem();}
+    if(document.getElementById("m-cl").style.display!=="none"){e.preventDefault();saveCl();}
+    if(document.getElementById("m-lim").style.display!=="none"){e.preventDefault();saveLim();}
+  }
+});
+
+// ── RENDER ─────────────────────────────────────────────────────────────────
+function render(){
+  buildTabs();renderLeft();renderCl();renderKanban();renderIncome();initMobile();
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+load();
+save(); // persist current state to localStorage
+document.getElementById("i-sal").value=S.salByMonth[S.curMonth]||31000;
+document.getElementById("i-ben").value=S.benByMonth[S.curMonth]||21000;
+render();
+</script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js'));
+}
+</script>
+</body>
+</html>
