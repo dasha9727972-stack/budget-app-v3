@@ -20,7 +20,7 @@
   --purple:#6B4FBB;--pbg:#f3f0fd;--pb:#c9bff0;
   --r:12px;--rs:8px;
 }
-html,body{height:100%;font-family:-apple-system,system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;overflow:hidden}
+html,body{height:100%;font-family:-apple-system,system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;overflow:hidden;max-width:100%}
 /* ── DESKTOP LAYOUT ── */
 .app{display:grid;grid-template-columns:300px 1fr;height:100vh}
 /* ── LEFT ── */
@@ -177,121 +177,73 @@ input:focus,select:focus{outline:none;border-color:var(--blue)}
    One column. Kanban: tab switcher, full-width columns.
 ══════════════════════════════════════ */
 @media(max-width:700px){
-  html,body{overflow:auto;height:auto}
-  .app{grid-template-columns:1fr;height:auto;overflow:visible}
-
-  /* Left panel - compact */
-  .lp{height:auto;max-height:44vh;min-height:200px;overflow:hidden}
-  .lp-top{padding:10px}
-  .lp-top h2{font-size:13px;margin-bottom:7px}
-  .lp-list{overflow-y:auto;flex:1}
-
-  /* Right panel */
-  .rp{overflow:visible;height:auto}
-
-  /* Month tabs */
-  .mtabs{padding:8px 10px 0}
-  .mtabs-row{gap:4px}
-  .mtabs-row .chip{font-size:10px;padding:4px 10px}
-
-  /* Income - 3 cols then 2x2 */
-  .income{padding:8px 10px}
-  .inc-grid{grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:6px}
-  .inc-card{padding:6px 8px}
+  html,body{overflow-x:hidden !important;overflow-y:auto !important;height:auto !important;width:100%}
+  .app{display:block !important;width:100% !important;height:auto;overflow-x:hidden !important}
+  .lp{width:100% !important;height:auto;max-height:44vh;min-height:180px;overflow:hidden;display:flex;flex-direction:column;border-right:none;border-bottom:1px solid var(--border)}
+  .lp-top{padding:10px;flex-shrink:0}
+  .lp-top h2{font-size:13px;margin-bottom:6px}
+  .lp-list{flex:1;overflow-y:auto;overflow-x:hidden;padding:6px 8px}
+  .lc-row{flex-wrap:nowrap}
+  .lc-name{font-size:11px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lc-price{font-size:11px;font-weight:700;flex-shrink:0;white-space:nowrap;padding-left:4px}
+  .rp{width:100% !important;overflow-x:hidden !important;height:auto;display:flex;flex-direction:column}
+  .mtabs{padding:8px 10px 0;overflow:hidden}
+  .mtabs-row{flex-wrap:wrap;gap:3px;padding-bottom:8px}
+  .mtabs-row .chip{font-size:10px;padding:4px 8px}
+  .income{padding:8px 10px;width:100% !important;overflow:hidden}
+  .inc-grid{grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:6px}
+  .inc-card{padding:6px 7px}
   .inc-lbl{font-size:8px}
   .inc-inp{font-size:13px}
-  .inc-extra-total{font-size:13px}
+  .inc-extra-total{font-size:12px}
   .btn-link{font-size:9px;padding:2px 5px}
   .hier{grid-template-columns:1fr 1fr;gap:5px}
   .hc{padding:6px 8px}
   .hc-lbl{font-size:8px;line-height:1.3}
   .hc-val{font-size:13px}
-
-  /* Checklist */
-  .cl-wrap{padding:7px 10px}
+  .cl-wrap{padding:7px 10px;width:100% !important;overflow:hidden}
   .cl-hdr{font-size:10px;margin-bottom:6px}
-  .cl-items{gap:4px}
-  .cl-item{font-size:10px;padding:4px 7px}
+  .cl-items{display:flex;flex-wrap:wrap;gap:4px;overflow:hidden;width:100%}
+  .cl-item{font-size:10px;padding:4px 7px;flex-shrink:0;max-width:calc(50% - 4px)}
   .cl-amt{font-size:9px}
-  .cl-edit{font-size:9px}
-
-  /* Subtabs */
-  .rtabs{padding:7px 10px 0;gap:4px}
-  .rtabs .chip{font-size:11px;padding:5px 12px}
-
-  /* Kanban mobile tab switcher - SHOW on mobile */
-  #mob-tabs{display:flex !important}
-  .mob-kb-tab{flex:1;padding:9px 4px;font-size:11px;font-weight:600;border:none;border-bottom:2px solid transparent;background:transparent;color:#b0ada4;text-align:center;cursor:pointer;font-family:inherit}
-  .mob-kb-tab .tab-sum{display:block;font-size:10px;font-weight:400;color:#b0ada4;margin-top:1px}
-  .mob-kb-tab.on{color:#1a1a18;border-bottom-color:#1a1a18}
-  .mob-kb-tab.on .tab-sum{color:#6b6860}
-
-  /* Kanban topbar - 2x2 grid */
-  .kbtop{
-    grid-template-columns:1fr 1fr;
-    gap:6px;
-    padding:8px 10px;
-  }
-  .kbs{display:none}
+  .rtabs{padding:7px 10px 0;gap:5px}
+  #mob-tabs{display:flex !important;width:100%}
+  .mob-kb-tab{flex:1;padding:9px 3px;font-size:10px;font-weight:600;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--t3);text-align:center;cursor:pointer;font-family:inherit;overflow:hidden;min-width:0}
+  .mob-kb-tab .tab-sum{display:block;font-size:9px;font-weight:400;margin-top:1px;color:var(--t3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mob-kb-tab.on{color:var(--text);border-bottom-color:var(--text)}
+  .mob-kb-tab.on .tab-sum{color:var(--t2)}
+  .kbtop{display:grid !important;grid-template-columns:1fr 1fr !important;gap:6px;padding:8px 10px;width:100% !important}
+  .kbs{display:none !important}
   .kbc{padding:7px 9px}
   .kbc-lbl{font-size:8px}
   .kbc-val{font-size:13px}
-  .kbc-avail{grid-column:1/-1;padding:9px 11px;min-width:0}
-  .kbc-avail .kbc-lbl{font-size:8px}
-  .av-total{font-size:14px}
+  .kbc-avail{grid-column:1/-1 !important;padding:8px 10px;width:auto !important;min-width:0 !important}
+  .av-total{font-size:13px}
   .av-spent{font-size:10px}
   .av-sub{font-size:9px}
-  /* ok/over also full width */
-  .kbtop > div:last-child{grid-column:1/-1}
-
-  /* Kanban board */
-  .kboard{overflow:visible;height:auto}
-  .kanban{display:block;padding:0;height:auto;overflow:visible}
-
-  /* Each column hidden by default, shown via mob-show */
-  .kcol{
-    display:none;
-    width:100%;
-    height:auto;
-    max-height:none;
-    border-radius:0;
-    border-left:none;
-    border-right:none;
-    border-top:none;
-  }
-  .kcol.mob-show{display:flex;flex-direction:column}
-  .kcol-items{overflow-y:visible;max-height:none;padding:10px}
+  #kbtop > div:last-child{grid-column:1/-1 !important}
+  .kboard{width:100% !important;overflow:visible;height:auto}
+  .kanban{display:block !important;padding:0 !important;height:auto;width:100% !important}
+  .kcol{display:none !important;width:100% !important;height:auto !important;max-height:none !important;border-radius:0 !important;border-left:none !important;border-right:none !important;border-top:none !important;overflow:visible !important}
+  .kcol.mob-show{display:flex !important;flex-direction:column}
   .kcol-head{padding:10px 14px}
-
-  /* Cards in kanban - full width, no overflow */
-  .kc{padding:10px 12px;margin-bottom:8px}
-  .kc-row{flex-wrap:nowrap}
-  .kc-name{font-size:13px;word-break:break-word;white-space:normal;flex:1;min-width:0;padding-right:6px}
-  .kc-price{font-size:14px;white-space:nowrap;flex-shrink:0}
+  .kcol-items{overflow-y:visible !important;max-height:none !important;padding:10px}
+  .kc{padding:10px 12px;margin-bottom:8px;width:100% !important;overflow:hidden}
+  .kc-row{display:flex !important;justify-content:space-between;align-items:flex-start;gap:6px}
+  .kc-name{font-size:12px;font-weight:600;flex:1;min-width:0;word-break:break-word;white-space:normal !important}
+  .kc-price{font-size:13px;font-weight:700;flex-shrink:0;white-space:nowrap !important}
   .kc-note{font-size:11px}
-  .kc-date{font-size:11px}
-  .tags .tag{font-size:10px;padding:2px 7px}
   .kc-btns{flex-wrap:wrap;gap:5px}
   .kb{font-size:11px;padding:5px 11px}
-  .lim-inp{width:75px;font-size:14px}
-
-  /* Left list cards */
-  .lc{padding:9px 10px;margin-bottom:6px}
-  .lc-row{flex-wrap:nowrap}
-  .lc-name{font-size:12px;flex:1;min-width:0;word-break:break-word}
-  .lc-price{font-size:12px;font-weight:700;white-space:nowrap;flex-shrink:0;padding-left:5px}
-  .lc-note{font-size:10px}
-  .tags .tag{font-size:9px}
-
-  /* Modals */
-  .mbox{padding:14px;max-width:calc(100vw - 20px)}
-  .g3{grid-template-columns:1fr 1fr}
-  .btn{font-size:13px}
-
-  /* Calendar */
-  .cal-wrap{padding:8px 10px}
-  .cal-cell{min-height:46px}
-  .cal-ev{font-size:9px}
+  .lim-inp{width:70px !important;font-size:13px}
+  .dz{padding:14px;font-size:11px}
+  .cal-wrap{padding:8px 10px;width:100% !important}
+  .cal-grid{width:100%}
+  .cal-cell{min-height:46px;padding:3px}
+  .ov{padding:10px}
+  .mbox{padding:14px;width:calc(100% - 20px) !important;max-width:calc(100% - 20px) !important}
+  .g3{grid-template-columns:1fr 1fr !important}
+  input[type=text],input[type=number],input[type=date],select{font-size:16px}
 }
 </style>
 </head>
