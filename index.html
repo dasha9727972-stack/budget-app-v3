@@ -273,7 +273,11 @@ input:focus,select:focus{outline:none;border-color:var(--blue)}
 <div class="rp">
   <!-- Month tabs -->
   <div class="mtabs">
-    <div class="mtabs-row" id="month-tabs"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+    <div style="font-size:11px;font-weight:600;color:var(--t2)">Мой бюджет</div>
+    <div id="sync-status" style="font-size:10px;color:var(--t3)"></div>
+  </div>
+  <div class="mtabs-row" id="month-tabs"></div>
   </div>
   <!-- Income -->
   <div class="income">
@@ -595,6 +599,105 @@ let lf="all", calYear=2026, calMonth=6;
 let editId=null, clEditId=null, limEditId=null, spendLimId=null;
 let dragId=null;
 const KEY = "budget_app_2026";
+const SB_URL = "https://zcobhjbwdpxlcndhnika.supabase.co";
+const SB_KEY = "sb_publishable_4ev1IvQz9PU6PMdj_hDUgw_ok05w4pZ";
+const SB_TABLE = "budget_data";
+const SB_ROW = "main";
+
+// ── SUPABASE SYNC ──────────────────────────────────────────────────────────
+let syncTimeout = null;
+let isSyncing = false;
+
+async function sbFetch(method, body=null) {
+  const opts = {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SB_KEY,
+      'Authorization': 'Bearer ' + SB_KEY,
+      'Prefer': method === 'POST' ? 'resolution=merge-duplicates,return=minimal' : ''
+    }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const url = SB_URL + '/rest/v1/' + SB_TABLE + '?id=eq.' + SB_ROW;
+  const r = await fetch(method === 'POST' ? SB_URL + '/rest/v1/' + SB_TABLE : url, opts);
+  return r;
+}
+
+async function syncToCloud() {
+  if (isSyncing) return;
+  isSyncing = true;
+  showSyncStatus('⏳ Сохраняю...');
+  try {
+    const payload = { id: SB_ROW, data: S, updated_at: new Date().toISOString() };
+    // Try update first
+    const upd = await fetch(SB_URL + '/rest/v1/' + SB_TABLE + '?id=eq.' + SB_ROW, {
+      method: 'PATCH',
+      headers: { 'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Prefer':'return=minimal' },
+      body: JSON.stringify({ data: S, updated_at: new Date().toISOString() })
+    });
+    if (upd.status === 404 || upd.headers.get('content-range') === '*/0') {
+      // Insert if not exists
+      await fetch(SB_URL + '/rest/v1/' + SB_TABLE, {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Prefer':'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify(payload)
+      });
+    }
+    showSyncStatus('✓ Сохранено');
+  } catch(e) {
+    showSyncStatus('⚠️ Нет сети');
+  }
+  isSyncing = false;
+}
+
+async function loadFromCloud() {
+  showSyncStatus('⏳ Загружаю...');
+  try {
+    const r = await fetch(SB_URL + '/rest/v1/' + SB_TABLE + '?id=eq.' + SB_ROW + '&select=data,updated_at', {
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
+    });
+    const rows = await r.json();
+    if (rows && rows.length > 0 && rows[0].data) {
+      const cloud = rows[0].data;
+      // Compare with local - use newer
+      const localTs = S._updatedAt || 0;
+      const cloudTs = rows[0].updated_at || 0;
+      if (!localTs || new Date(cloudTs) > new Date(localTs)) {
+        S = cloud;
+        save();
+        showSyncStatus('✓ Синхронизировано');
+        return true;
+      }
+    }
+    showSyncStatus('✓ Актуально');
+  } catch(e) {
+    showSyncStatus('⚠️ Нет сети');
+  }
+  return false;
+}
+
+function showSyncStatus(msg) {
+  let el = document.getElementById('sync-status');
+  if (!el) return;
+  el.textContent = msg;
+  if (msg.startsWith('✓')) {
+    el.style.color = 'var(--green)';
+    setTimeout(() => { if(el.textContent === msg) el.textContent = ''; }, 3000);
+  } else if (msg.startsWith('⚠️')) {
+    el.style.color = 'var(--amber)';
+  } else {
+    el.style.color = 'var(--t3)';
+  }
+}
+
+// Debounced save — saves locally immediately, syncs to cloud after 1.5s pause
+function saveAndSync() {
+  S._updatedAt = new Date().toISOString();
+  save();
+  clearTimeout(syncTimeout);
+  syncTimeout = setTimeout(() => syncToCloud(), 1500);
+}
 
 // ── STORAGE ────────────────────────────────────────────────────────────────
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
@@ -642,7 +745,7 @@ function setCurMonth(m,btn){
   if(btn)btn.classList.add("on");
   document.getElementById("i-sal").value=S.salByMonth[m]||30000;
   document.getElementById("i-ben").value=S.benByMonth[m]||21000;
-  save();render();
+  saveAndSync();render();
 }
 
 // ── INCOME ─────────────────────────────────────────────────────────────────
@@ -719,7 +822,7 @@ function renderCl(){
       <button class="cl-edit" onclick="event.stopPropagation();openCl('${c.id}')">✎</button>
     </div>`).join("");
 }
-function toggleCl(id){const c=getCl().find(x=>x.id===id);if(c)c.paid=!c.paid;save();renderCl();renderIncome();}
+function toggleCl(id){const c=getCl().find(x=>x.id===id);if(c)c.paid=!c.paid;saveAndSync();renderCl();renderIncome();}
 function openCl(id){
   clEditId=id;const cl=getCl();const c=id?cl.find(x=>x.id===id):null;
   document.getElementById("m-cl-ttl").textContent=c?"Редактировать":"Новый платёж";
@@ -735,9 +838,9 @@ function saveCl(){
   const cl=getCl();
   if(clEditId){const c=cl.find(x=>x.id===clEditId);if(c){c.name=name;c.amount=+document.getElementById("cl-amt").value||0;c.note=document.getElementById("cl-note").value.trim();}}
   else cl.push({id:"cl"+Date.now(),name,amount:+document.getElementById("cl-amt").value||0,note:document.getElementById("cl-note").value.trim(),paid:false});
-  closeCl();save();renderCl();renderIncome();renderTopbar();
+  closeCl();saveAndSync();renderCl();renderIncome();renderTopbar();
 }
-function deleteCl(){if(!clEditId)return;const cl=getCl();const i=cl.findIndex(x=>x.id===clEditId);if(i>-1)cl.splice(i,1);closeCl();save();renderCl();renderIncome();renderTopbar();}
+function deleteCl(){if(!clEditId)return;const cl=getCl();const i=cl.findIndex(x=>x.id===clEditId);if(i>-1)cl.splice(i,1);closeCl();saveAndSync();renderCl();renderIncome();renderTopbar();}
 function closeCl(){document.getElementById("m-cl").style.display="none";clEditId=null;}
 
 // ── KANBAN ─────────────────────────────────────────────────────────────────
@@ -813,9 +916,9 @@ function kcardHTML(it,col){
 }
 
 function updLim(id,val){const l=getLims().find(x=>x.id===id);if(l)l.limit=+val||0;save();renderKanban();}
-function markDone(id){const it=S.items.find(i=>i.id===id);if(it)it.done=true;save();render();}
-function unDone(id){const it=S.items.find(i=>i.id===id);if(it)it.done=false;save();render();}
-function removePlan(id){const it=S.items.find(i=>i.id===id);if(it){it.status="free";it.done=false;}save();render();}
+function markDone(id){const it=S.items.find(i=>i.id===id);if(it)it.done=true;saveAndSync();render();}
+function unDone(id){const it=S.items.find(i=>i.id===id);if(it)it.done=false;saveAndSync();render();}
+function removePlan(id){const it=S.items.find(i=>i.id===id);if(it){it.status="free";it.done=false;}saveAndSync();render();}
 
 // Limit modals
 function openLim(id){
@@ -833,9 +936,9 @@ function saveLim(){
   const lims=getLims();
   if(limEditId){const l=lims.find(x=>x.id===limEditId);if(l){l.name=name;l.limit=+document.getElementById("lm-lim").value||0;l.emoji=document.getElementById("lm-emoji").value||"📦";}}
   else lims.push({id:"lim"+Date.now(),name,emoji:document.getElementById("lm-emoji").value||"📦",limit:+document.getElementById("lm-lim").value||0,spent:0});
-  closeLim();save();renderKanban();renderIncome();
+  closeLim();saveAndSync();renderKanban();renderIncome();
 }
-function deleteLim(){if(!limEditId)return;const lims=getLims();const i=lims.findIndex(x=>x.id===limEditId);if(i>-1)lims.splice(i,1);closeLim();save();renderKanban();renderIncome();}
+function deleteLim(){if(!limEditId)return;const lims=getLims();const i=lims.findIndex(x=>x.id===limEditId);if(i>-1)lims.splice(i,1);closeLim();saveAndSync();renderKanban();renderIncome();}
 function closeLim(){document.getElementById("m-lim").style.display="none";limEditId=null;}
 
 // Spend modal
@@ -852,7 +955,7 @@ function saveSpend(){
   const note=document.getElementById("sp-note").value.trim();
   const l=getLims().find(x=>x.id===spendLimId);if(l)l.spent+=amt;
   S.items.push({id:S.nextId++,name:`${l?l.emoji:""} ${l?l.name:"Трата"}${note?" — "+note:""}`,price:amt,cat:"other",prio:"high",when:S.curMonth,date:"",note,status:"plan",done:true});
-  closeSpend();save();render();
+  closeSpend();saveAndSync();render();
 }
 function closeSpend(){document.getElementById("m-spend").style.display="none";spendLimId=null;}
 
@@ -864,7 +967,7 @@ function onDrop(e){
   if(!dragId)return;
   const it=S.items.find(i=>i.id===dragId);
   if(it){it.status="plan";it.when=S.curMonth;}
-  dragId=null;save();render();
+  dragId=null;saveAndSync();render();
 }
 
 // ── LEFT LIST ──────────────────────────────────────────────────────────────
@@ -928,13 +1031,13 @@ function saveItem(){
   } else {
     S.items.unshift({id:S.nextId++,name,price:+document.getElementById("mi-price").value||0,cat:document.getElementById("mi-cat").value,prio:document.getElementById("mi-prio").value,when:document.getElementById("mi-when").value,date:document.getElementById("mi-date").value||"",note:document.getElementById("mi-note").value.trim(),status:"free",done:false});
   }
-  closeItem();save();render();
+  closeItem();saveAndSync();render();
 }
-function deleteItem(){if(!editId)return;if(!confirm("Удалить?"))return;S.items=S.items.filter(i=>i.id!==editId);closeItem();save();render();}
+function deleteItem(){if(!editId)return;if(!confirm("Удалить?"))return;S.items=S.items.filter(i=>i.id!==editId);closeItem();saveAndSync();render();}
 function reuseItem(){
   if(!editId)return;const orig=S.items.find(i=>i.id===editId);if(!orig)return;
   S.items.unshift({id:S.nextId++,name:orig.name,price:orig.price,cat:orig.cat,prio:orig.prio,when:S.curMonth,date:"",note:orig.note,status:"free",done:false});
-  closeItem();save();render();
+  closeItem();saveAndSync();render();
 }
 
 // ── EXTRA INCOME ────────────────────────────────────────────────────────────
@@ -1007,8 +1110,8 @@ function setRT(t,btn){
 }
 
 // ── INPUT SYNC ─────────────────────────────────────────────────────────────
-document.getElementById("i-sal").addEventListener("input",()=>{S.salByMonth[S.curMonth]=getSal();save();renderIncome();renderTopbar();});
-document.getElementById("i-ben").addEventListener("input",()=>{S.benByMonth[S.curMonth]=getBen();save();renderIncome();renderTopbar();});
+document.getElementById("i-sal").addEventListener("input",()=>{S.salByMonth[S.curMonth]=getSal();saveAndSync();renderIncome();renderTopbar();});
+document.getElementById("i-ben").addEventListener("input",()=>{S.benByMonth[S.curMonth]=getBen();saveAndSync();renderIncome();renderTopbar();});
 
 // ── KEYBOARD ───────────────────────────────────────────────────────────────
 document.addEventListener("keydown",e=>{
@@ -1027,10 +1130,11 @@ function render(){
 
 // ── INIT ───────────────────────────────────────────────────────────────────
 load();
-save(); // persist current state to localStorage
 document.getElementById("i-sal").value=S.salByMonth[S.curMonth]||31000;
 document.getElementById("i-ben").value=S.benByMonth[S.curMonth]||21000;
 render();
+// Load from cloud and re-render if newer data found
+loadFromCloud().then(updated => { if(updated) { document.getElementById("i-sal").value=S.salByMonth[S.curMonth]||31000; document.getElementById("i-ben").value=S.benByMonth[S.curMonth]||21000; render(); } });
 </script>
 <script>
 if('serviceWorker' in navigator){
