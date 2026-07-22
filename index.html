@@ -46,6 +46,8 @@ html,body{height:100%;font-family:-apple-system,system-ui,sans-serif;background:
 .lc-price{font-size:12px;font-weight:700;white-space:nowrap;flex-shrink:0}
 .lc-price.np{color:var(--amber);font-weight:400;font-size:11px}
 .lc-note{font-size:10px;color:var(--t3);margin-top:2px;line-height:1.3}
+.lc-btns{margin-top:5px}
+.lc-plan-btn{padding:4px 10px;font-size:10px;border:0.5px solid var(--blue);border-radius:6px;background:var(--bbg);color:var(--blue);cursor:pointer;font-family:inherit;font-weight:500}
 .tags{display:flex;gap:3px;flex-wrap:wrap;margin-top:5px}
 .tag{font-size:9px;padding:2px 6px;border-radius:6px;font-weight:600}
 .bp{position:absolute;top:5px;right:6px;font-size:9px;padding:1px 5px;border-radius:4px;color:#fff;font-weight:600}
@@ -275,7 +277,10 @@ input:focus,select:focus{outline:none;border-color:var(--blue)}
   <div class="mtabs">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
     <div style="font-size:11px;font-weight:600;color:var(--t2)">Мой бюджет</div>
-    <div id="sync-status" style="font-size:10px;color:var(--t3)"></div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <div id="sync-status" style="font-size:10px;color:var(--t3)"></div>
+      <button onclick="manualRefresh()" style="font-size:11px;padding:3px 8px;border:0.5px solid var(--border);border-radius:6px;background:var(--bg);cursor:pointer;font-family:inherit;color:var(--t2)" title="Обновить данные">🔄</button>
+    </div>
   </div>
   <div class="mtabs-row" id="month-tabs"></div>
   </div>
@@ -534,10 +539,10 @@ const DEFAULT = {
     {id:"cl6",name:"iCloud",amount:1200,note:"",paid:false},
   ]},
   limByMonth:{"2026-07":[
-    {id:"lim1",name:"Продукты",emoji:"🛒",limit:8000,spent:0},
-    {id:"lim2",name:"Бензин",emoji:"⛽",limit:2500,spent:2000},
-    {id:"lim3",name:"Бытовая химия и товары для дома",emoji:"🧴",limit:2000,spent:0},
-    {id:"lim4",name:"Корм и наполнитель для кота",emoji:"🐱",limit:1600,spent:0},
+    {id:"lim1",name:"Продукты",emoji:"🛒",limit:8000,spent:0,spends:[]},
+    {id:"lim2",name:"Бензин",emoji:"⛽",limit:2500,spent:2000,spends:[{id:"sp1",amt:2000,note:"Заправка",date:"2026-07-05"}]},
+    {id:"lim3",name:"Бытовая химия и товары для дома",emoji:"🧴",limit:2000,spent:0,spends:[]},
+    {id:"lim4",name:"Корм и наполнитель для кота",emoji:"🐱",limit:1600,spent:0,spends:[]},
   ]},
   items:[
     // КУПЛЕНО — итого 11 870 ₽
@@ -600,7 +605,7 @@ let editId=null, clEditId=null, limEditId=null, spendLimId=null;
 let dragId=null;
 const KEY = "budget_app_2026";
 const SB_URL = "https://zcobhjbwdpxlcndhnika.supabase.co";
-const SB_KEY = "sb_publishable_4ev1IvQz9PU6PMdj_hDUgw_ok05w4pZ";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpjb2JoamJ3ZHB4bGNuZGhuaWthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNDE3MzQsImV4cCI6MjA5OTgxNzczNH0.rN1BQfebIOdJYungY-QcqpSlvxdpbavaA7uLpyioP-U";
 const SB_TABLE = "budget_data";
 const SB_ROW = "main";
 
@@ -629,7 +634,10 @@ async function syncToCloud() {
   isSyncing = true;
   showSyncStatus('⏳ Сохраняю...');
   try {
-    // UPSERT — создаёт или обновляет запись
+    const now = new Date().toISOString();
+    S._updatedAt = now;
+    save();
+    // Try UPSERT via POST with on-conflict
     const r = await fetch(SB_URL + '/rest/v1/' + SB_TABLE, {
       method: 'POST',
       headers: {
@@ -638,14 +646,29 @@ async function syncToCloud() {
         'Authorization': 'Bearer ' + SB_KEY,
         'Prefer': 'resolution=merge-duplicates,return=minimal'
       },
-      body: JSON.stringify({ id: SB_ROW, data: S, updated_at: new Date().toISOString() })
+      body: JSON.stringify({ id: SB_ROW, data: S, updated_at: now })
     });
-    if (r.ok || r.status === 201) {
+    if (r.ok || r.status === 201 || r.status === 204) {
       showSyncStatus('✓ Сохранено');
     } else {
-      const err = await r.text();
-      console.error('Sync error:', r.status, err);
-      showSyncStatus('⚠️ Ошибка ' + r.status);
+      // Fallback: try PATCH
+      const r2 = await fetch(SB_URL + '/rest/v1/' + SB_TABLE + '?id=eq.' + SB_ROW, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SB_KEY,
+          'Authorization': 'Bearer ' + SB_KEY,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ data: S, updated_at: now })
+      });
+      if (r2.ok || r2.status === 204) {
+        showSyncStatus('✓ Сохранено');
+      } else {
+        const err = await r2.text();
+        console.error('Sync error:', r2.status, err);
+        showSyncStatus('⚠️ Ошибка сохранения');
+      }
     }
   } catch(e) {
     console.error('Sync exception:', e);
@@ -660,13 +683,16 @@ async function loadFromCloud() {
     const r = await fetch(SB_URL + '/rest/v1/' + SB_TABLE + '?id=eq.' + SB_ROW + '&select=data,updated_at', {
       headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
     });
-    if (!r.ok) { showSyncStatus('⚠️ Ошибка ' + r.status); return false; }
+    if (!r.ok) {
+      console.error('Load HTTP error:', r.status, await r.text());
+      showSyncStatus('⚠️ Ошибка ' + r.status);
+      return false;
+    }
     const rows = await r.json();
     if (rows && rows.length > 0 && rows[0].data) {
       const cloud = rows[0].data;
       const cloudTs = new Date(rows[0].updated_at || 0).getTime();
       const localTs = new Date(S._updatedAt || 0).getTime();
-      // Always use cloud if it's newer or local has no timestamp
       if (cloudTs > localTs || !S._updatedAt) {
         S = cloud;
         save();
@@ -674,19 +700,29 @@ async function loadFromCloud() {
         return true;
       } else {
         showSyncStatus('✓ Актуально');
+        return false;
       }
     } else {
-      // No data in cloud yet — push local data up
-      showSyncStatus('⏳ Первая загрузка...');
+      // Nothing in cloud — push local up
       await syncToCloud();
+      return false;
     }
   } catch(e) {
     console.error('Load error:', e);
     showSyncStatus('⚠️ Нет сети');
+    return false;
   }
-  return false;
 }
 
+async function manualRefresh(){
+  showSyncStatus('⏳ Обновляю...');
+  const updated = await loadFromCloud();
+  if(updated){
+    document.getElementById("i-sal").value=S.salByMonth[S.curMonth]||31000;
+    document.getElementById("i-ben").value=S.benByMonth[S.curMonth]||21000;
+    render();
+  }
+}
 function showSyncStatus(msg) {
   let el = document.getElementById('sync-status');
   if (!el) return;
@@ -738,7 +774,7 @@ function getLimTotal(){return(S.limByMonth[S.curMonth]||[]).reduce((s,l)=>s+l.li
 function getPlanTotal(){return S.items.filter(i=>i.when===S.curMonth&&i.status==="plan"&&!i.done).reduce((s,i)=>s+(i.price||0),0);}
 function getDoneTotal(){return S.items.filter(i=>i.when===S.curMonth&&i.done).reduce((s,i)=>s+(i.price||0),0);}
 function getCl(){if(!S.clByMonth[S.curMonth])S.clByMonth[S.curMonth]=JSON.parse(JSON.stringify(DEFAULT.clByMonth["2026-07"]||[])).map(x=>({...x,paid:false}));return S.clByMonth[S.curMonth];}
-function getLims(){if(!S.limByMonth[S.curMonth]){const prev=Object.keys(S.limByMonth).sort().filter(k=>k<S.curMonth).pop();S.limByMonth[S.curMonth]=prev?S.limByMonth[prev].map(x=>({...x,spent:0})):[{id:"lim1",name:"Продукты",emoji:"🛒",limit:8000,spent:0},{id:"lim2",name:"Бензин",emoji:"⛽",limit:2500,spent:0},{id:"lim3",name:"Бытовая химия",emoji:"🧴",limit:2000,spent:0},{id:"lim4",name:"Кот",emoji:"🐱",limit:1600,spent:0}];}return S.limByMonth[S.curMonth];}
+function getLims(){if(!S.limByMonth[S.curMonth]){const prev=Object.keys(S.limByMonth).sort().filter(k=>k<S.curMonth).pop();S.limByMonth[S.curMonth]=prev?S.limByMonth[prev].map(x=>({...x,spent:0,spends:[]})):[{id:"lim1",name:"Продукты",emoji:"🛒",limit:8000,spent:0,spends:[]},{id:"lim2",name:"Бензин",emoji:"⛽",limit:2500,spent:0,spends:[]},{id:"lim3",name:"Бытовая химия",emoji:"🧴",limit:2000,spent:0,spends:[]},{id:"lim4",name:"Кот",emoji:"🐱",limit:1600,spent:0,spends:[]}];}S.limByMonth[S.curMonth].forEach(l=>{if(!l.spends)l.spends=[];});return S.limByMonth[S.curMonth];}
 const isMob=()=>window.innerWidth<=700;
 
 // ── MONTH TABS ─────────────────────────────────────────────────────────────
@@ -864,6 +900,17 @@ function renderKanban(){
       const rem=l.limit-l.spent;
       const pct=l.limit>0?Math.min(100,l.spent/l.limit*100):0;
       const col=pct>90?"var(--red)":pct>70?"var(--amber)":"var(--green)";
+      const spends=l.spends||[];
+      const spendsHTML=spends.length?`<div style="margin-top:6px;border-top:0.5px solid var(--border);padding-top:6px">
+        <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px">История трат</div>
+        ${spends.map(sp=>`<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:3px 0;border-bottom:0.5px solid var(--border)">
+          <span style="color:var(--t2)">${sp.date} ${sp.note?'— '+sp.note:''}</span>
+          <span style="display:flex;align-items:center;gap:6px">
+            <strong style="color:var(--red)">−${sp.amt.toLocaleString("ru-RU")} ₽</strong>
+            <span onclick="event.stopPropagation();deleteSpend('${l.id}','${sp.id}')" style="color:var(--t3);cursor:pointer;font-size:12px;padding:0 3px" title="Удалить">✕</span>
+          </span>
+        </div>`).join("")}
+      </div>`:"";
       return`<div class="kc lim-card">
         <div class="kc-row">
           <div class="kc-name">${l.emoji} ${l.name}</div>
@@ -873,9 +920,14 @@ function renderKanban(){
             <span style="font-size:11px;color:var(--t3)">₽</span>
           </div>
         </div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);margin-bottom:3px">
+          <span>Потрачено: <strong style="color:var(--red)">${fmt(l.spent)}</strong></span>
+          <span>Лимит: ${fmt(l.limit)}</span>
+        </div>
         <div class="lim-bar"><div class="lim-fill" style="width:${pct}%;background:${col}"></div></div>
-        <div class="lim-remain" style="color:${rem<0?"var(--red)":rem<l.limit*.2?"var(--amber)":"var(--green)"}">${rem>=0?"Осталось "+fmt(rem):"Перерасход "+fmt(Math.abs(rem))}</div>
-        <div class="kc-btns" onclick="event.stopPropagation()">
+        <div class="lim-remain" style="color:${rem<0?"var(--red)":rem<l.limit*.2?"var(--amber)":"var(--green)"}">${rem>=0?"Осталось "+fmt(rem):"⚠️ Перерасход "+fmt(Math.abs(rem))}</div>
+        ${spendsHTML}
+        <div class="kc-btns" onclick="event.stopPropagation()" style="margin-top:6px">
           <button class="kb ok" onclick="openSpend('${l.id}')">+ Потратила</button>
           <button class="kb" onclick="openLim('${l.id}')">✎ Изменить</button>
         </div>
@@ -928,7 +980,9 @@ function kcardHTML(it,col){
 function updLim(id,val){const l=getLims().find(x=>x.id===id);if(l)l.limit=+val||0;save();renderKanban();}
 function markDone(id){const it=S.items.find(i=>i.id===id);if(it)it.done=true;saveAndSync();render();}
 function unDone(id){const it=S.items.find(i=>i.id===id);if(it)it.done=false;saveAndSync();render();}
+function addToPlan(id){const it=S.items.find(i=>i.id===id);if(it){it.status="plan";it.when=S.curMonth;}saveAndSync();render();}
 function removePlan(id){const it=S.items.find(i=>i.id===id);if(it){it.status="free";it.done=false;}saveAndSync();render();}
+function addToPlan(id){const it=S.items.find(i=>i.id===id);if(it){it.status="plan";it.when=S.curMonth;}saveAndSync();render();}
 
 // Limit modals
 function openLim(id){
@@ -954,8 +1008,18 @@ function closeLim(){document.getElementById("m-lim").style.display="none";limEdi
 // Spend modal
 function openSpend(id){
   spendLimId=id;const l=getLims().find(x=>x.id===id);if(!l)return;
-  document.getElementById("sp-ttl").textContent=`${l.emoji} ${l.name} — трата`;
-  document.getElementById("sp-sub").textContent=`Лимит: ${fmt(l.limit)} · Потрачено: ${fmt(l.spent)} · Осталось: ${fmt(l.limit-l.spent)}`;
+  const spent=limSpent(l);const rem=l.limit-spent;
+  document.getElementById("sp-ttl").textContent=`${l.emoji} ${l.name}`;
+  const hist=(l.spends||[]);
+  document.getElementById("sp-sub").innerHTML=`
+    <div style="margin-bottom:8px">Лимит: <strong>${fmt(l.limit)}</strong> · По факту: <strong style="color:var(--red)">${fmt(spent)}</strong> · Остаток: <strong style="color:${rem<0?"var(--red)":"var(--green)"}">${rem<0?"−":""}${fmt(Math.abs(rem))}</strong></div>
+    ${hist.length?`<div style="font-size:11px;font-weight:600;color:var(--t2);margin-bottom:5px">История трат:</div>`+
+    hist.map((s,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:0.5px solid var(--border);font-size:12px">
+      <span style="flex:1">${s.note||"Без заметки"}</span>
+      <span style="font-weight:700">${fmt(s.amount)}</span>
+      <span style="font-size:10px;color:var(--t3)">${s.date||""}</span>
+      <button onclick="deleteSpend('${id}','${s.id}')" style="font-size:10px;color:var(--red);border:none;background:none;cursor:pointer;padding:2px 5px">✕</button>
+    </div>`).join(""):"<div style='font-size:11px;color:var(--t3)'>Трат пока нет</div>"}`;
   document.getElementById("sp-amt").value="";document.getElementById("sp-note").value="";
   document.getElementById("m-spend").style.display="flex";
   setTimeout(()=>document.getElementById("sp-amt").focus(),80);
@@ -963,9 +1027,23 @@ function openSpend(id){
 function saveSpend(){
   if(!spendLimId)return;const amt=+document.getElementById("sp-amt").value||0;if(!amt)return;
   const note=document.getElementById("sp-note").value.trim();
-  const l=getLims().find(x=>x.id===spendLimId);if(l)l.spent+=amt;
+  const l=getLims().find(x=>x.id===spendLimId);
+  if(l){
+    l.spent+=amt;
+    if(!l.spends)l.spends=[];
+    l.spends.push({id:"sp"+Date.now(),amt,note,date:new Date().toLocaleDateString("ru-RU")});
+  }
   S.items.push({id:S.nextId++,name:`${l?l.emoji:""} ${l?l.name:"Трата"}${note?" — "+note:""}`,price:amt,cat:"other",prio:"high",when:S.curMonth,date:"",note,status:"plan",done:true});
   closeSpend();saveAndSync();render();
+}
+function deleteSpend(limId, spendId){
+  const l=getLims().find(x=>x.id===limId);
+  if(!l||!l.spends)return;
+  const sp=l.spends.find(s=>s.id===spendId);
+  if(sp){l.spent=Math.max(0,l.spent-sp.amt);l.spends=l.spends.filter(s=>s.id!==spendId);}
+  // Also remove from done items
+  S.items=S.items.filter(i=>!(i.done&&i.name.startsWith(l.emoji)&&i.price===sp?.amt));
+  saveAndSync();render();
 }
 function closeSpend(){document.getElementById("m-spend").style.display="none";spendLimId=null;}
 
@@ -1012,6 +1090,7 @@ function renderLeft(){
       </div>
       ${it.note?`<div class="lc-note">${it.note}</div>`:""}
       <div class="tags">${catTag(it.cat)}${prioTag(it.prio)}${dtTag(it.date)}</div>
+      ${!it.done&&it.status==="free"?`<div class="lc-btns" onclick="event.stopPropagation()"><button class="lc-plan-btn" onclick="addToPlan(${it.id})">+ В план</button></div>`:""}
     </div>`).join("");
   }).join("");
 }
