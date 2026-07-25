@@ -770,14 +770,30 @@ function getBen(){return +(document.getElementById("i-ben").value)||0;}
 function getExtraTotal(){return(S.extraByMonth[S.curMonth]||[]).reduce((s,e)=>s+e.amount,0);}
 function getTotalIncome(){return getSal()+getBen()+getExtraTotal();}
 function getClTotal(){return(S.clByMonth[S.curMonth]||[]).reduce((s,c)=>s+c.amount,0);}
-function getLimTotal(){return(S.limByMonth[S.curMonth]||[]).reduce((s,l)=>s+l.limit,0);}
+function getLimTotal(){return getLims().reduce((s,l)=>s+l.limit,0);}
 function getPlanTotal(){return S.items.filter(i=>i.when===S.curMonth&&i.status==="plan"&&!i.done).reduce((s,i)=>s+(i.price||0),0);}
 function getDoneTotal(){return S.items.filter(i=>i.when===S.curMonth&&i.done).reduce((s,i)=>s+(i.price||0),0);}
 function getCl(){if(!S.clByMonth[S.curMonth])S.clByMonth[S.curMonth]=JSON.parse(JSON.stringify(DEFAULT.clByMonth["2026-07"]||[])).map(x=>({...x,paid:false}));return S.clByMonth[S.curMonth];}
-function getLims(){if(!S.limByMonth[S.curMonth]){const prev=Object.keys(S.limByMonth).sort().filter(k=>k<S.curMonth).pop();S.limByMonth[S.curMonth]=prev?S.limByMonth[prev].map(x=>({...x,spent:0,spends:[]})):[{id:"lim1",name:"Продукты",emoji:"🛒",limit:8000,spent:0,spends:[]},{id:"lim2",name:"Бензин",emoji:"⛽",limit:2500,spent:0,spends:[]},{id:"lim3",name:"Бытовая химия",emoji:"🧴",limit:2000,spent:0,spends:[]},{id:"lim4",name:"Кот",emoji:"🐱",limit:1600,spent:0,spends:[]}];}S.limByMonth[S.curMonth].forEach(l=>{if(!l.spends)l.spends=[];});return S.limByMonth[S.curMonth];}
-const isMob=()=>window.innerWidth<=700;
-
-// ── MONTH TABS ─────────────────────────────────────────────────────────────
+function limSpent(l){return(l.spends||[]).reduce((s,x)=>s+x.amount,0);}
+function getLims(){
+  if(!S.limByMonth[S.curMonth]){
+    const prev=Object.keys(S.limByMonth).sort().filter(k=>k<S.curMonth).pop();
+    S.limByMonth[S.curMonth]=prev?S.limByMonth[prev].map(x=>({...x,spends:[]})):[
+      {id:"lim1",name:"Продукты",emoji:"🛒",limit:8000,spends:[]},
+      {id:"lim2",name:"Бензин",emoji:"⛽",limit:2500,spends:[]},
+      {id:"lim3",name:"Бытовая химия",emoji:"🧴",limit:2000,spends:[]},
+      {id:"lim4",name:"Кот",emoji:"🐱",limit:1600,spends:[]},
+    ];
+  }
+  S.limByMonth[S.curMonth].forEach(l=>{
+    if(typeof l.spent==="number"&&!l.spends){
+      l.spends=l.spent>0?[{id:"migr1",amount:l.spent,note:"Перенесено",date:""}]:[];
+      delete l.spent;
+    }
+    if(!l.spends)l.spends=[];
+  });
+  return S.limByMonth[S.curMonth];
+}
 function buildTabs(){
   document.getElementById("month-tabs").innerHTML=ALL_MONTHS.map(m=>
     `<button class="chip${m===S.curMonth?" on":""}" onclick="setCurMonth('${m}',this)">${ml(m)}</button>`
