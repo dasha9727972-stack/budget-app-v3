@@ -41,6 +41,58 @@ body.dark{
 html,body{height:100%;font-family:-apple-system,system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;overflow:hidden}
 /* ── DESKTOP LAYOUT ── */
 .app{display:grid;grid-template-columns:300px 1fr;height:100vh}
+
+/* ── TOP BAR (month tabs + controls) ── */
+.rp-top-bar{background:var(--card);border-bottom:1px solid var(--border);padding:8px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-shrink:0}
+.rp-controls{display:flex;align-items:center;gap:7px;flex-shrink:0}
+.ctrl-btn{padding:4px 9px;font-size:11px;border:0.5px solid var(--border);border-radius:6px;background:var(--bg);cursor:pointer;font-family:inherit;color:var(--t2)}
+.ctrl-btn:hover{background:var(--border)}
+.claude-btn{background:var(--pbg);border-color:var(--pb);color:var(--purple);font-weight:600}
+
+/* ── INCOME ROW (all in one line) ── */
+.inc-row-full{background:var(--card);border-bottom:1px solid var(--border);padding:8px 14px;display:flex;gap:6px;align-items:stretch;flex-shrink:0;overflow-x:auto}
+.inc-row-full::-webkit-scrollbar{height:0}
+.inc-input-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rs);padding:7px 10px;flex-shrink:0;min-width:110px}
+.inc-extra-card{min-width:160px}
+.inc-lbl{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}
+.inc-val-row{display:flex;align-items:center;gap:4px}
+.inc-inp{flex:1;font-size:14px;font-weight:700;border:none;background:transparent;font-family:inherit;color:var(--text);min-width:0;width:60px}
+.inc-inp:focus{outline:none;border-bottom:1.5px solid var(--blue)}
+.inc-rub{font-size:11px;color:var(--t3);flex-shrink:0}
+.inc-extra-sum{font-size:14px;font-weight:700;flex:1;color:var(--text)}
+.inc-add-btn{font-size:10px;padding:2px 7px;border:0.5px solid var(--bb);border-radius:5px;background:var(--bbg);color:var(--blue);cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0}
+.inc-toggle-btn{width:22px;height:22px;border:0.5px solid var(--border);border-radius:5px;background:var(--card);cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0}
+.inc-extra-list{margin-top:5px;border-top:0.5px solid var(--border);padding-top:5px;max-height:80px;overflow-y:auto}
+.inc-extra-row{display:flex;justify-content:space-between;font-size:11px;padding:2px 0;color:var(--t2)}
+
+/* ── SUMMARY CARDS ── */
+.sum-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rs);padding:7px 10px;flex-shrink:0;min-width:100px}
+.sum-lbl{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:3px;line-height:1.3}
+.sum-val{font-size:14px;font-weight:700}
+.sum-green{background:var(--gbg);border-color:var(--gb)}.sum-green .sum-val{color:var(--green)}
+.sum-amber{background:var(--abg);border-color:var(--ab)}.sum-amber .sum-val{color:var(--amber)}
+.sum-blue{background:var(--bbg);border-color:var(--bb)}.sum-blue .sum-val{color:var(--blue)}
+.sum-red{background:var(--rbg);border-color:var(--rb)}.sum-red .sum-val{color:var(--red)}
+.sum-neutral .sum-val{color:var(--blue)}
+
+/* ── AVAILABLE CARD (big with progress bar) ── */
+.avail-card{background:var(--bbg);border:0.5px solid var(--bb);border-radius:var(--rs);padding:7px 12px;flex-shrink:0;min-width:200px}
+.avail-lbl{font-size:9px;color:var(--blue);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}
+.avail-nums{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;gap:8px}
+.avail-total{font-size:15px;font-weight:700;color:var(--blue);flex-shrink:0}
+.avail-spent-txt{font-size:10px;color:var(--t2);flex-shrink:0}
+.avail-bar-bg{height:5px;background:rgba(0,0,0,.08);border-radius:3px;overflow:hidden;margin-bottom:3px}
+.avail-bar-fill{height:100%;border-radius:3px;transition:width .4s;background:var(--green);width:0%}
+.avail-footer{display:flex;justify-content:space-between;font-size:10px}
+.avail-remain{font-weight:600}
+
+/* ── CHECKLIST in right panel ── */
+.cl-block{background:var(--card);border-bottom:1px solid var(--border);padding:8px 14px;flex-shrink:0}
+.cl-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.cl-title{font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.4px}
+
+/* ── TABS ── */
+.rtabs{display:flex;gap:4px;padding:7px 14px 0;background:var(--card);border-bottom:1px solid var(--border);flex-shrink:0}
 /* ── LEFT ── */
 .lp{background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
 .lp-top{padding:12px;border-bottom:1px solid var(--border);flex-shrink:0}
@@ -277,92 +329,129 @@ input:focus,select:focus{outline:none;border-color:var(--blue)}
 
 <!-- ══ RIGHT ══ -->
 <div class="rp">
-  <!-- Month tabs -->
-  <div class="mtabs">
+
+  <!-- ── ROW 1: Month tabs + controls ── -->
+  <div class="rp-top-bar">
     <div class="mtabs-row" id="month-tabs"></div>
-  </div>
-  <!-- Income -->
-  <div class="income">
-    <div class="inc-grid">
-      <div class="inc-card">
-        <div class="inc-lbl">Зарплата</div>
-        <div class="inc-row"><input class="inc-inp" type="number" id="i-sal" value="30000"><span style="font-size:11px;color:var(--t3)">₽</span></div>
-      </div>
-      <div class="inc-card">
-        <div class="inc-lbl">Пособие</div>
-        <div class="inc-row"><input class="inc-inp" type="number" id="i-ben" value="21000"><span style="font-size:11px;color:var(--t3)">₽</span></div>
-      </div>
-      <div class="inc-card">
-        <div class="inc-lbl">Дополнительно</div>
-        <div class="inc-row">
-          <span class="inc-extra-total" id="i-ext-tot">0 ₽</span>
-          <button class="btn-link" onclick="openExtra()">+ Добавить</button>
-        </div>
-        <div class="inc-extra-names" id="i-ext-names"></div>
-      </div>
-    </div>
-    <div class="hier">
-      <div class="hc" style="background:var(--gbg);border-color:var(--gb)">
-        <div class="hc-lbl">Итого доход</div>
-        <div class="hc-val" id="h-inc" style="color:var(--green)">—</div>
-      </div>
-      <div class="hc" style="background:var(--rbg);border-color:var(--rb)">
-        <div class="hc-lbl">Важные платежи</div>
-        <div class="hc-val" id="h-cl" style="color:var(--red)">—</div>
-      </div>
-      <div class="hc" style="background:var(--abg);border-color:var(--ab)">
-        <div class="hc-lbl">Мой баланс (после важных)</div>
-        <div class="hc-val" id="h-bal" style="color:var(--amber)">—</div>
-      </div>
-      <div class="hc" style="background:var(--bbg);border-color:var(--bb)">
-        <div class="hc-lbl">Остаток (после трат)</div>
-        <div class="hc-val" id="h-free" style="color:var(--blue)">—</div>
-      </div>
+    <div class="rp-controls">
+      <span id="sync-status" style="font-size:10px;color:var(--t3)"></span>
+      <button onclick="manualRefresh()" class="ctrl-btn" title="Обновить">🔄</button>
+      <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Тема"></button>
+      <button onclick="exportForClaude()" class="ctrl-btn claude-btn">📤 Клоду</button>
     </div>
   </div>
-  <!-- Checklist -->
-  <div class="cl-wrap">
-    <div class="cl-hdr">✅ Важные платежи <button class="btn sm" onclick="openCl(null)" style="font-size:10px">+ Добавить</button></div>
+
+  <!-- ── ROW 2: Income inputs + summary cards (all in one row per sketch) ── -->
+  <div class="inc-row-full">
+    <!-- Зарплата -->
+    <div class="inc-input-card">
+      <div class="inc-lbl">Зарплата</div>
+      <div class="inc-val-row">
+        <input class="inc-inp" type="number" id="i-sal" value="30000">
+        <span class="inc-rub">₽</span>
+      </div>
+    </div>
+    <!-- Пособие -->
+    <div class="inc-input-card">
+      <div class="inc-lbl">Пособие</div>
+      <div class="inc-val-row">
+        <input class="inc-inp" type="number" id="i-ben" value="21000">
+        <span class="inc-rub">₽</span>
+      </div>
+    </div>
+    <!-- Дополнительно -->
+    <div class="inc-input-card inc-extra-card">
+      <div class="inc-lbl">Дополнительно</div>
+      <div class="inc-val-row">
+        <span class="inc-extra-sum" id="i-ext-tot">0 ₽</span>
+        <button class="inc-add-btn" onclick="openExtra()">+ Добавить</button>
+        <button class="inc-toggle-btn" id="extra-toggle-btn" onclick="toggleExtraList()">▾</button>
+      </div>
+      <div class="inc-extra-list" id="i-ext-names" style="display:none"></div>
+    </div>
+    <!-- Итого доход -->
+    <div class="sum-card sum-green">
+      <div class="sum-lbl">Итого доход</div>
+      <div class="sum-val" id="h-inc">—</div>
+    </div>
+    <!-- Доступно для плана — большая карточка с полоской -->
+    <div class="avail-card">
+      <div class="avail-lbl">Доступно для плана</div>
+      <div class="avail-nums">
+        <span class="avail-total" id="h-avail">—</span>
+        <span class="avail-spent-txt">потрачено: <strong id="h-spent" style="color:var(--red)">—</strong></span>
+      </div>
+      <div class="avail-bar-bg"><div class="avail-bar-fill" id="avail-fill"></div></div>
+      <div class="avail-footer">
+        <span id="h-remain" class="avail-remain">—</span>
+        <span id="h-pct" style="font-size:10px;color:var(--t3)">0%</span>
+      </div>
+    </div>
+    <!-- Мой баланс -->
+    <div class="sum-card sum-amber">
+      <div class="sum-lbl">Мой баланс (после важных)</div>
+      <div class="sum-val" id="h-bal">—</div>
+    </div>
+    <!-- Остаток после трат -->
+    <div class="sum-card sum-blue">
+      <div class="sum-lbl">Остаток (после трат)</div>
+      <div class="sum-val" id="h-free">—</div>
+    </div>
+    <!-- Лимиты месяца -->
+    <div class="sum-card sum-neutral">
+      <div class="sum-lbl">Лимиты месяца</div>
+      <div class="sum-val" id="h-lim">—</div>
+    </div>
+    <!-- Превышение — показывается только если есть -->
+    <div class="sum-card sum-red" id="h-over-card" style="display:none">
+      <div class="sum-lbl">⚠️ Превышение</div>
+      <div class="sum-val" id="h-over">—</div>
+    </div>
+  </div>
+
+  <!-- ── ROW 3: Checklist ── -->
+  <div class="cl-block">
+    <div class="cl-head">
+      <div>
+        <div class="cl-title">✅ Важные платежи</div>
+      </div>
+      <button class="ctrl-btn" onclick="openCl(null)">+ Добавить</button>
+    </div>
     <div class="cl-items" id="cl-items"></div>
   </div>
-  <!-- Subtabs -->
-  <div class="rtabs" style="display:flex;justify-content:space-between;align-items:center">
-    <div style="display:flex;gap:4px">
-      <button class="chip on" onclick="setRT('kanban',this)">📋 Канбан</button>
-      <button class="chip" onclick="setRT('calendar',this)">📅 Календарь</button>
-      <button class="chip" onclick="setRT('archive',this)">🗂️ Архив</button>
-    </div>
-    <div style="display:flex;gap:6px;align-items:center">
-      <span id="sync-status" style="font-size:10px;color:var(--t3)"></span>
-      <button onclick="manualRefresh()" style="padding:4px 8px;font-size:12px;border:0.5px solid var(--border);border-radius:6px;background:var(--bg);cursor:pointer;font-family:inherit" title="Обновить">🔄</button>
-      <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Тема"></button>
-      <button onclick="exportForClaude()" style="padding:5px 10px;font-size:11px;border:0.5px solid var(--pb);border-radius:6px;background:var(--pbg);color:var(--purple);cursor:pointer;font-family:inherit;font-weight:600">📤 Клоду</button>
-    </div>
+
+  <!-- ── ROW 4: Tabs (Канбан / Календарь / Архив) ── -->
+  <div class="rtabs">
+    <button class="chip on" onclick="setRT('kanban',this)">📋 Канбан</button>
+    <button class="chip" onclick="setRT('calendar',this)">📅 Календарь</button>
+    <button class="chip" onclick="setRT('archive',this)">🗂️ Архив</button>
   </div>
-  <!-- Mobile kanban tab switcher (shown only on mobile) -->
-  <div class="mob-kb-tabs" id="mob-tabs" style="display:none">
-    <button class="mob-kb-tab on" onclick="setMobCol(0,this)">📦 Лимиты<span class="tab-sum" id="mt-lim">—</span></button>
-    <button class="mob-kb-tab" onclick="setMobCol(1,this)">🗂️ Запланировано<span class="tab-sum" id="mt-plan">—</span></button>
-    <button class="mob-kb-tab" onclick="setMobCol(2,this)">✅ Куплено<span class="tab-sum" id="mt-done">—</span></button>
-  </div>
-  <!-- Kanban -->
+
+  <!-- ── Kanban (NO topbar) ── -->
   <div class="kboard" id="rt-kanban">
-    <!-- Topbar -->
-    <div class="kbtop" id="kbtop"></div>
-    <!-- Board -->
+    <div class="mob-kb-tabs" id="mob-tabs" style="display:none">
+      <button class="mob-kb-tab on" onclick="setMobCol(0,this)">📦 Лимиты<span class="tab-sum" id="mt-lim">—</span></button>
+      <button class="mob-kb-tab" onclick="setMobCol(1,this)">🗂️ Запланировано<span class="tab-sum" id="mt-plan">—</span></button>
+      <button class="mob-kb-tab" onclick="setMobCol(2,this)">✅ Куплено<span class="tab-sum" id="mt-done">—</span></button>
+    </div>
     <div class="kanban">
       <div class="kcol mob-show" id="col-lim">
         <div class="kcol-head lim">
-          <div class="kcol-title">📦 Лимиты</div>
-          <div class="kcol-sum" id="lim-sum" style="color:var(--blue)">0 ₽</div>
-          <div class="kcol-hint">Постоянные расходы месяца</div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div class="kcol-title">📦 Лимиты</div>
+              <div class="kcol-sum" id="lim-sum">0 ₽</div>
+              <div class="kcol-hint">Постоянные расходы месяца</div>
+            </div>
+            <button class="chip" onclick="openLim(null)" style="font-size:10px;padding:3px 8px;flex-shrink:0">+ Добавить</button>
+          </div>
         </div>
         <div class="kcol-items" id="kb-lim"></div>
       </div>
       <div class="kcol" id="col-plan">
         <div class="kcol-head plan">
           <div class="kcol-title">🗂️ Запланировано</div>
-          <div class="kcol-sum" id="plan-sum" style="color:var(--purple)">0 ₽</div>
+          <div class="kcol-sum" id="plan-sum">0 ₽</div>
           <div class="kcol-hint">Перетащи из левого списка</div>
         </div>
         <div class="kcol-items" id="kb-plan"
@@ -372,19 +461,20 @@ input:focus,select:focus{outline:none;border-color:var(--blue)}
           <div class="dz" id="plan-dz"
             ondragover="event.preventDefault();this.classList.add('over')"
             ondragleave="this.classList.remove('over')"
-            ondrop="onDrop(event)">← Перетащи сюда</div>
+            ondrop="onDrop(event)">← Перетащи сюда из списка</div>
         </div>
       </div>
       <div class="kcol" id="col-done">
         <div class="kcol-head done">
           <div class="kcol-title">✅ Куплено</div>
-          <div class="kcol-sum" id="done-sum" style="color:var(--green)">0 ₽</div>
+          <div class="kcol-sum" id="done-sum">0 ₽</div>
           <div class="kcol-hint">Отмеченные покупки</div>
         </div>
         <div class="kcol-items" id="kb-done"></div>
       </div>
     </div>
   </div>
+
   <!-- Archive -->
   <div class="cal-wrap" id="rt-archive" style="display:none">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
@@ -393,6 +483,7 @@ input:focus,select:focus{outline:none;border-color:var(--blue)}
     </div>
     <div id="archive-list"></div>
   </div>
+
   <!-- Calendar -->
   <div class="cal-wrap" id="rt-calendar" style="display:none">
     <div class="cal-nav">
@@ -402,8 +493,8 @@ input:focus,select:focus{outline:none;border-color:var(--blue)}
     </div>
     <div class="cal-grid" id="cal-grid"></div>
   </div>
-</div>
 
+</div>
 <!-- ══ MODALS ══ -->
 <!-- Item modal -->
 <div class="ov" id="m-item" style="display:none" onclick="if(event.target===this)closeItem()">
@@ -750,67 +841,75 @@ function setCurMonth(m,btn){
 
 // ── INCOME ─────────────────────────────────────────────────────────────────
 function renderIncome(){
-  const ext=getExtraTotal();
+  const sal=getSal(), ben=getBen(), ext=getExtraTotal();
   const extList=S.extraByMonth[S.curMonth]||[];
-  document.getElementById("i-ext-tot").textContent=fmt(ext);
-  document.getElementById("i-ext-names").textContent=extList.map(e=>e.src+(e.amount?` ${fmt(e.amount)}`:""+(e.note?` (${e.note})`:""))).join(" · ")||"";
-  const total=getSal()+getBen()+ext;
+
+  // Extra total display
+  const extEl=document.getElementById("i-ext-tot");
+  if(extEl) extEl.textContent=fmt(ext);
+
+  // Extra list (collapsible)
+  const extNames=document.getElementById("i-ext-names");
+  if(extNames) extNames.innerHTML=extList.map(e=>`
+    <div class="inc-extra-row">
+      <span>${e.src}</span>
+      <span style="font-weight:600">${fmt(e.amount)}</span>
+    </div>`).join("")||"<div style='font-size:10px;color:var(--t3)'>Пусто</div>";
+
+  const total=sal+ben+ext;
   const cl=getClTotal();
-  const bal=total-cl;
-  const done=getDoneTotal();
-  const free=bal-getLimTotal()-done;
-  document.getElementById("h-inc").textContent=fmt(total);
-  document.getElementById("h-cl").textContent="− "+fmt(cl);
-  document.getElementById("h-bal").textContent=fmt(bal);
-  const fe=document.getElementById("h-free");
-  fe.textContent=(free<0?"− ":"")+fmt(Math.abs(free));
-  fe.style.color=free<0?"var(--red)":free<3000?"var(--amber)":"var(--blue)";
-}
-
-// ── KANBAN TOPBAR ──────────────────────────────────────────────────────────
-function renderTopbar(){
-  const bal=getTotalIncome()-getClTotal();
+  const bal=total-cl;           // Мой баланс
   const lim=getLimTotal();
+  const limSpentTotal=getLims().reduce((s,l)=>s+limSpent(l),0);
+  const planTotal=getPlanTotal();
+  const doneTotal=getDoneTotal();
+  // Остаток = баланс - лимиты - куплено (из плана, без лимитных трат)
+  const donePlan=S.items.filter(i=>i.when===S.curMonth&&i.done&&!i.limId).reduce((s,i)=>s+(i.price||0),0);
+  const free=bal-lim-donePlan;  // Остаток после трат
+  // Доступно для плана = баланс - лимиты
   const avail=bal-lim;
-  const spent=getDoneTotal();
-  const remaining=avail-spent;
-  const pct=avail>0?Math.min(100,spent/avail*100):0;
+  // Потрачено из плана (доска куплено)
+  const spent=doneTotal;
+  const remain=avail-spent;
+  const pct=avail>0?Math.min(100,Math.max(0,spent/avail*100)):0;
   const barCol=pct>90?"var(--red)":pct>70?"var(--amber)":"var(--green)";
-  const plan=getPlanTotal();
-  const committed=spent+plan;
-  const isOver=committed>avail;
-  const overAmt=committed-avail;
+  const isOver=remain<0;
 
-  document.getElementById("kbtop").innerHTML=`
-    <div class="kbc">
-      <div class="kbc-lbl">Мой баланс</div>
-      <div class="kbc-val" style="color:var(--amber)">${fmt(bal)}</div>
-    </div>
-    <div class="kbs">−</div>
-    <div class="kbc">
-      <div class="kbc-lbl">Лимиты месяца</div>
-      <div class="kbc-val" style="color:var(--blue)">${fmt(lim)}</div>
-    </div>
-    <div class="kbs">=</div>
-    <div class="kbc-avail">
-      <div class="kbc-lbl">Доступно для плана</div>
-      <div class="av-row">
-        <span class="av-total">${fmt(avail)}</span>
-        <span class="av-spent">потрачено: <strong style="color:var(--red)">${fmt(spent)}</strong></span>
-      </div>
-      <div class="av-bar"><div class="av-fill" style="width:${pct}%;background:${barCol}"></div></div>
-      <div class="av-sub">
-        <span style="color:${remaining<0?"var(--red)":remaining<3000?"var(--amber)":"var(--green)"};font-weight:600">Осталось: ${remaining<0?"− ":""}${fmt(Math.abs(remaining))}</span>
-        <span>${Math.round(pct)}% потрачено</span>
-      </div>
-    </div>
-    <div class="kbs">·</div>
-    ${isOver
-      ?`<div class="kbc over"><div class="kbc-lbl">⚠️ Превышение</div><div class="kbc-val">− ${fmt(overAmt)}</div></div>`
-      :`<div class="kbc ok"><div class="kbc-lbl">✓ В рамках бюджета</div><div class="kbc-val">${fmt(avail-committed)}</div></div>`}`;
+  const set=(id,val)=>{const e=document.getElementById(id);if(e)e.textContent=val;};
+  set("h-inc", fmt(total));
+  set("h-avail", fmt(avail));
+  set("h-spent", fmt(spent));
+  set("h-pct", Math.round(pct)+"%");
+  set("h-bal", fmt(bal));
+  set("h-lim", fmt(lim));
+
+  // Остаток / превышение
+  const freeEl=document.getElementById("h-free");
+  if(freeEl){
+    freeEl.textContent=(free<0?"− ":"")+fmt(Math.abs(free));
+    freeEl.style.color=free<0?"var(--red)":free<3000?"var(--amber)":"var(--blue)";
+  }
+
+  // Progress bar
+  const fill=document.getElementById("avail-fill");
+  if(fill){fill.style.width=Math.min(100,pct)+"%";fill.style.background=barCol;}
+
+  // Remain label
+  const remEl=document.getElementById("h-remain");
+  if(remEl){
+    remEl.textContent=(remain<0?"⚠️ Перерасход ":"Осталось ")+fmt(Math.abs(remain));
+    remEl.style.color=remain<0?"var(--red)":remain<3000?"var(--amber)":"var(--green)";
+  }
+
+  // Over card
+  const overCard=document.getElementById("h-over-card");
+  const overEl=document.getElementById("h-over");
+  if(overCard&&overEl){
+    overCard.style.display=isOver?"flex":"none";
+    overEl.textContent="− "+fmt(Math.abs(remain));
+  }
 }
 
-// ── CHECKLIST ──────────────────────────────────────────────────────────────
 function renderCl(){
   const cl=getCl();
   document.getElementById("cl-items").innerHTML=cl.map(c=>`
@@ -1130,80 +1229,13 @@ function initMobile(){
 function setRT(t,btn){
   document.getElementById("rt-kanban").style.display=t==="kanban"?"flex":"none";
   document.getElementById("rt-calendar").style.display=t==="calendar"?"block":"none";
+  const arch=document.getElementById("rt-archive");if(arch)arch.style.display=t==="archive"?"block":"none";
   document.querySelectorAll(".rtabs .chip").forEach(b=>b.classList.remove("on"));
-  btn.classList.add("on");
+  if(btn)btn.classList.add("on");
   if(t==="calendar")renderCalendar();
+  if(t==="archive")renderArchive();
 }
 
-// ── INPUT SYNC ─────────────────────────────────────────────────────────────
-document.getElementById("i-sal").addEventListener("input",()=>{S.salByMonth[S.curMonth]=getSal();save();renderIncome();renderTopbar();});
-document.getElementById("i-ben").addEventListener("input",()=>{S.benByMonth[S.curMonth]=getBen();save();renderIncome();renderTopbar();});
-
-// ── KEYBOARD ───────────────────────────────────────────────────────────────
-document.addEventListener("keydown",e=>{
-  if(e.key==="Escape"){closeItem();closeExtra();closeCl();closeLim();closeSpend();}
-  if(e.key==="Enter"){
-    if(document.getElementById("m-item").style.display!=="none"){e.preventDefault();saveItem();}
-    if(document.getElementById("m-cl").style.display!=="none"){e.preventDefault();saveCl();}
-    if(document.getElementById("m-lim").style.display!=="none"){e.preventDefault();saveLim();}
-  }
-});
-
-// ── RENDER ─────────────────────────────────────────────────────────────────
-function render(){
-  buildTabs();renderLeft();renderCl();renderKanban();renderIncome();initMobile();
-}
-
-
-// ── THEME ──────────────────────────────────────────────────────────────────
-function toggleTheme(){
-  const dark=document.body.classList.toggle("dark");
-  const btn=document.getElementById("theme-toggle");
-  if(btn)btn.classList.toggle("dark",dark);
-  localStorage.setItem("budget_theme",dark?"dark":"light");
-}
-function loadTheme(){
-  if(localStorage.getItem("budget_theme")==="dark"){
-    document.body.classList.add("dark");
-    const btn=document.getElementById("theme-toggle");
-    if(btn)btn.classList.add("dark");
-  }
-}
-
-// ── SYNC STATUS ────────────────────────────────────────────────────────────
-function showSyncStatus(msg){
-  const el=document.getElementById("sync-status");if(!el)return;
-  el.textContent=msg;
-  el.style.color=msg.startsWith("✓")?"var(--green)":msg.startsWith("⚠")?"var(--amber)":"var(--t3)";
-  if(msg.startsWith("✓"))setTimeout(()=>{if(el.textContent===msg)el.textContent="";},3000);
-}
-async function manualRefresh(){
-  showSyncStatus("⏳ Обновляю...");
-  const updated=await loadFromCloud();
-  if(updated){
-    document.getElementById("i-sal").value=S.salByMonth[S.curMonth]||31000;
-    document.getElementById("i-ben").value=S.benByMonth[S.curMonth]||21000;
-    render();
-  }
-}
-
-// ── DUPLICATE + ADD TO PLAN ────────────────────────────────────────────────
-function addToPlan(id){
-  const it=S.items.find(i=>i.id===id);
-  if(it){it.status="plan";it.when=S.curMonth;}
-  saveAndSync();render();
-}
-function dupToNextMonth(id){
-  const it=S.items.find(i=>i.id===id);if(!it)return;
-  const parts=S.curMonth.split("-");let y=+parts[0],mo=+parts[1];
-  mo++;if(mo>12){mo=1;y++;}
-  const next=y+"-"+String(mo).padStart(2,"0");
-  S.items.push({...it,id:S.nextId++,when:next,date:"",status:"free",done:false});
-  showSyncStatus("✓ Скопировано в "+ml(next));
-  saveAndSync();renderLeft();
-}
-
-// ── ARCHIVE ────────────────────────────────────────────────────────────────
 function renderArchive(){
   const root=document.getElementById("archive-list");if(!root)return;
   const months=[...new Set(S.items.filter(i=>i.when!=="someday").map(i=>i.when))].sort().reverse();
