@@ -349,6 +349,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
     <div class="rp-ctrl">
       <span id="sync-status"></span>
       <button class="ctrl-btn" onclick="manualRefresh()" title="Обновить">🔄</button>
+      <button class="ctrl-btn" id="close-month-btn" onclick="closeMonth()" title="Закрыть текущий месяц как завершённый" style="border-color:var(--gb);color:var(--green)">✓ Закрыть</button>
       <button class="ctrl-btn ctrl-claude" onclick="openClaudeReport()">📤 Клоду</button>
     </div>
   </div>
@@ -945,9 +946,21 @@ function getDoneTotal(){
 function getPlanTotal(){return S.items.filter(i=>i.when===S.curMonth&&i.status==="plan"&&!i.done).reduce((s,i)=>s+(i.price||0),0);}
 
 function getCl(){
-  if(!S.clByMonth[S.curMonth]){
-    const prev=Object.keys(S.clByMonth).sort().pop();
-    S.clByMonth[S.curMonth]=prev?S.clByMonth[prev].map(x=>({...x,paid:false})):[];
+  if(!S.clByMonth[S.curMonth]||S.clByMonth[S.curMonth].length===0){
+    // Find the most recent previous month that has checklist items
+    const prevMonths=Object.keys(S.clByMonth)
+      .filter(k=>k<S.curMonth&&S.clByMonth[k].length>0)
+      .sort();
+    const prev=prevMonths[prevMonths.length-1];
+    if(prev){
+      S.clByMonth[S.curMonth]=S.clByMonth[prev].map(x=>({
+        ...x,
+        id:"cl"+Date.now()+Math.random().toString(36).slice(2),
+        paid:false
+      }));
+    } else {
+      S.clByMonth[S.curMonth]=[];
+    }
   }
   return S.clByMonth[S.curMonth];
 }
@@ -992,6 +1005,7 @@ function setMonth(m,btn){
   document.getElementById("i-sal").value=S.salByMonth[m]||0;
   document.getElementById("i-ben").value=S.benByMonth[m]||0;
   saveAndSync();render();
+  updateCloseBtnStyle();
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1197,7 +1211,27 @@ function kcardHTML(it,col){
 function markDone(id){const it=S.items.find(i=>i.id===id);if(it)it.done=true;saveAndSync();render();}
 function unDone(id){const it=S.items.find(i=>i.id===id);if(it)it.done=false;saveAndSync();render();}
 function removePlan(id){const it=S.items.find(i=>i.id===id);if(it){it.status="free";it.done=false;}saveAndSync();render();}
-function addToPlan(id){const it=S.items.find(i=>i.id===id);if(it){it.status="plan";it.when=S.curMonth;}saveAndSync();render();}
+function addToPlan(id){
+  const orig=S.items.find(i=>i.id===id);
+  if(!orig)return;
+  // If already in current month as free — just move to plan
+  if(orig.when===S.curMonth&&!orig.done&&orig.status==="free"){
+    orig.status="plan";
+    saveAndSync();render();return;
+  }
+  // Otherwise create a copy for current month
+  const copy={
+    ...orig,
+    id:S.nextId++,
+    when:S.curMonth,
+    date:"",
+    status:"plan",
+    done:false,
+    _copiedFrom:orig.id
+  };
+  S.items.push(copy);
+  saveAndSync();render();
+}
 function updLim(id,val){const l=getLims().find(x=>x.id===id);if(l)l.limit=+val||0;saveAndSync();renderKanban();renderIncome();}
 
 // Limit modals
@@ -1295,8 +1329,15 @@ function onDrop(e,col){
   e.preventDefault();
   e.currentTarget.classList.remove("over");
   if(!dragId)return;
-  const it=S.items.find(i=>i.id===dragId);
-  if(it){it.status="plan";it.when=S.curMonth;}
+  const orig=S.items.find(i=>i.id===dragId);
+  if(orig){
+    if(orig.when===S.curMonth&&!orig.done&&orig.status==="free"){
+      orig.status="plan";
+    } else {
+      // Create copy for current month
+      S.items.push({...orig,id:S.nextId++,when:S.curMonth,date:"",status:"plan",done:false,_copiedFrom:orig.id});
+    }
+  }
   dragId=null;saveAndSync();render();
 }
 
@@ -1567,8 +1608,25 @@ function renderArchive(){
 }
 function closeMonth(){
   if(!S.closedMonths)S.closedMonths=[];
-  if(!S.closedMonths.includes(S.curMonth))S.closedMonths.push(S.curMonth);
-  saveAndSync();renderArchive();showSync("✓ Месяц закрыт");
+  const m=S.curMonth;
+  if(S.closedMonths.includes(m)){
+    showSync("ℹ️ "+ml(m)+" уже закрыт");return;
+  }
+  S.closedMonths.push(m);
+  saveAndSync();
+  // Update close button style
+  updateCloseBtnStyle();
+  if(document.getElementById("rt-archive").style.display!=="none")renderArchive();
+  showSync("✓ "+ml(m)+" закрыт");
+}
+function updateCloseBtnStyle(){
+  const btn=document.getElementById("close-month-btn");
+  if(!btn)return;
+  const closed=(S.closedMonths||[]).includes(S.curMonth);
+  btn.style.borderColor=closed?"var(--t3)":"var(--gb)";
+  btn.style.color=closed?"var(--t3)":"var(--green)";
+  btn.title=closed?"Месяц уже закрыт":"Закрыть "+ml(S.curMonth)+" как завершённый";
+  btn.textContent=closed?"✓ Закрыт":"✓ Закрыть";
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1644,6 +1702,7 @@ function render(){
   renderKanban();
   renderIncome();
   initMobile();
+  updateCloseBtnStyle();
 }
 
 // ══════════════════════════════════════════════════════════════════
